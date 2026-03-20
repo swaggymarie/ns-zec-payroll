@@ -6,6 +6,14 @@ A privacy-focused payroll management system that enables organizations to pay co
 
 All sensitive data (recipient details, wallets, memos) is encrypted end-to-end using a user-controlled passphrase that is never stored on the server.
 
+## Screenshots
+
+| | |
+|---|---|
+| ![Login](screenshots/login.png) | ![Dashboard](screenshots/dashboard.png) |
+| ![Add Recipient](screenshots/recipient.png) | ![Verify](screenshots/verify.png) |
+| ![Payment](screenshots/pay.png) | |
+
 ## Tech Stack
 
 **Backend**: Node.js, TypeScript, Prisma ORM, PostgreSQL

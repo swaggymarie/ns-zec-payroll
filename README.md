@@ -23,8 +23,10 @@ All sensitive data (recipient details, wallets, memos) is encrypted end-to-end u
 ### Recipient Management
 
 - Add, edit, and delete recipients with fully encrypted storage
+- Search bar to filter recipients by name
 - Support for shielded Zcash addresses (Sapling or Unified)
 - Multiple payment currencies: ZEC, USD, USDC
+- USDC recipients include a destination address and chain (Ethereum, Solana, NEAR, Base, Arbitrum, Polygon)
 - Custom payment memos and avatar URLs
 - CSV import/export with merge mode (updates existing recipients by name, adds new ones)
 
@@ -48,12 +50,12 @@ All sensitive data (recipient details, wallets, memos) is encrypted end-to-end u
 - Automatic USD-to-ZEC conversion
 - Manual price override
 
-### USDC Integration (Planned — via Zodl NEAR Intents)
+### USDC Payouts (via Zodl CrossPay)
 
-- Backend and type scaffolding in place for USDC as a payment currency
-- Currently disabled in the UI (option greyed out)
-- Intended flow: ZEC is sent to the recipient, who then swaps to USDC via Zodl's NEAR intents off-ramp
-- No automated on-chain USDC transfer yet — memo tagging and separate batch grouping are ready for when the integration is complete
+- Recipients can choose USDC as their payment currency with a destination address on any supported chain (Ethereum, Solana, NEAR, Base, Arbitrum, Polygon)
+- At payment time, USDC recipients are separated from the ZIP-321 batch and displayed as individual CrossPay instructions
+- The admin uses Zodl's CrossPay feature to send each USDC payment: shielded ZEC is spent from the admin's wallet and the recipient receives USDC on their chosen chain via NEAR intents
+- USDC address and chain are stored encrypted alongside other sensitive recipient data
 
 ### Test Transactions
 
@@ -68,7 +70,8 @@ All sensitive data (recipient details, wallets, memos) is encrypted end-to-end u
 
 ### Batch Payment Processing
 
-- Generate batch ZIP-321 URIs for all due recipients
+- Generate batch ZIP-321 URIs for ZEC/USD recipients
+- USDC recipients displayed as individual CrossPay instruction cards with address, chain, and amount
 - Preview mode showing total ZEC, USD equivalent, and recipient count
 - Confirmation flow that marks recipients as paid and records payment history
 
@@ -172,7 +175,7 @@ zcash-payroll confirm-test <name>   # Mark test tx as confirmed
 - `GET /api/price` — Fetch current ZEC/USD price
 - `POST /api/price` — Manually set ZEC/USD price
 - `GET /api/preview` — Preview batch payment
-- `POST /api/pay` — Generate ZIP-321 payment URIs
+- `POST /api/pay` — Generate ZIP-321 URIs (ZEC) + CrossPay instructions (USDC)
 - `POST /api/confirm-pay` — Mark recipients as paid
 
 ### Test Transactions
@@ -191,7 +194,7 @@ zcash-payroll confirm-test <name>   # Mark test tx as confirmed
 
 - **Algorithm**: AES-256-GCM (authenticated encryption)
 - **Key Derivation**: scrypt (32-byte salt, 32-byte key)
-- **Encrypted fields**: name, wallet address, memo, avatar URL, Telegram config
+- **Encrypted fields**: name, wallet address, memo, avatar URL, USDC address, USDC chain, Telegram config
 - **Not encrypted**: amount, currency, schedule (needed for queries)
 - **Passphrase verification**: Trial decryption of a known probe string
 

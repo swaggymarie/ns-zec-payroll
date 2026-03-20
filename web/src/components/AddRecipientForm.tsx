@@ -2,9 +2,10 @@ import { useState } from "react";
 import { X } from "lucide-react";
 import { api } from "../lib/api";
 import { AmountInput } from "./AmountInput";
+import { ChainSelect } from "./ChainSelect";
 
 export function AddRecipientForm({ onDone, onCancel }: { onDone: () => void; onCancel: () => void }) {
-  const [form, setForm] = useState({ name: "", wallet: "", amount: "", currency: "ZEC", schedule: "monthly", memo: "", avatar: "", group: "" });
+  const [form, setForm] = useState({ name: "", wallet: "", amount: "", currency: "ZEC", schedule: "monthly", memo: "", avatar: "", group: "", usdcAddress: "", usdcChain: "ethereum" });
   const [error, setError] = useState("");
 
   async function handleSubmit(e: React.FormEvent) {
@@ -13,13 +14,15 @@ export function AddRecipientForm({ onDone, onCancel }: { onDone: () => void; onC
     try {
       await api.addRecipient({
         name: form.name,
-        wallet: form.wallet,
+        wallet: form.currency === "USDC" ? form.usdcAddress : form.wallet,
         amount: parseFloat(form.amount),
         currency: form.currency as "USD" | "ZEC" | "USDC",
         schedule: form.schedule as "weekly" | "biweekly" | "monthly" | "one-time",
         memo: form.memo,
         avatar: form.avatar || undefined,
         group: form.group || undefined,
+        usdcAddress: form.currency === "USDC" ? form.usdcAddress : undefined,
+        usdcChain: form.currency === "USDC" ? form.usdcChain as "ethereum" | "solana" | "near" | "base" | "arbitrum" | "polygon" : undefined,
       });
       onDone();
     } catch (err: unknown) {
@@ -65,11 +68,25 @@ export function AddRecipientForm({ onDone, onCancel }: { onDone: () => void; onC
             required />
         </div>
 
-        <div>
-          <label className="text-xs text-gray-500 mb-1.5 block">Wallet Address</label>
-          <input placeholder="Zcash shielded address" value={form.wallet} onChange={(e) => setForm({ ...form, wallet: e.target.value })}
-            className="w-full px-4 py-2.5 bg-[#0f0f1e] border border-[#2d2d52] rounded-xl text-white text-sm font-mono placeholder-gray-600 focus:outline-none focus:border-amber-500/50 transition-colors" required />
-        </div>
+        {form.currency === "USDC" ? (
+          <div className="grid grid-cols-3 gap-3">
+            <div className="col-span-2">
+              <label className="text-xs text-gray-500 mb-1.5 block">USDC Destination Address</label>
+              <input placeholder="0x... or recipient address" value={form.usdcAddress} onChange={(e) => setForm({ ...form, usdcAddress: e.target.value })}
+                className="w-full px-4 py-2.5 bg-[#0f0f1e] border border-[#2d2d52] rounded-xl text-white text-sm font-mono placeholder-gray-600 focus:outline-none focus:border-amber-500/50 transition-colors" required />
+            </div>
+            <div>
+              <label className="text-xs text-gray-500 mb-1.5 block">Chain</label>
+              <ChainSelect value={form.usdcChain} onChange={(v) => setForm({ ...form, usdcChain: v })} />
+            </div>
+          </div>
+        ) : (
+          <div>
+            <label className="text-xs text-gray-500 mb-1.5 block">Wallet Address</label>
+            <input placeholder="Zcash shielded address" value={form.wallet} onChange={(e) => setForm({ ...form, wallet: e.target.value })}
+              className="w-full px-4 py-2.5 bg-[#0f0f1e] border border-[#2d2d52] rounded-xl text-white text-sm font-mono placeholder-gray-600 focus:outline-none focus:border-amber-500/50 transition-colors" required />
+          </div>
+        )}
 
         <div className="grid grid-cols-2 gap-3">
           <div className="relative">

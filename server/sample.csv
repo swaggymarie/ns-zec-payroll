@@ -1,6 +1,6 @@
-name,wallet,amount,currency,schedule,memo,avatar,group
-Alice Johnson,zs1x4nkru2awv50q67cxa85qcl9hl6wcfe59wjnqepq3ajk3gp0avwg5fe2n2fkgtmqftjhxe7tykl,10.0,ZEC,monthly,March sprint payment,https://api.dicebear.com/9.x/avataaars/svg?seed=Alice,Engineering
-Bob Chen,zs1qnzlkj5rd7akv9y2m3fwx0p6e8thl4sg0d2kcn7rj3y5v8xwm1f4qa9b6t2d0h3e7gn5j8ckpz,1.5,ZEC,biweekly,Protocol development,https://api.dicebear.com/9.x/avataaars/svg?seed=Bob,Engineering
-Carol Rivera,zs1m7xh3dk4p0f9wn2v5tc8rq6jy1ae3bgl0s7km4dx2n8fw5hp9tv3cq6ja1re4bg0ls7km4dx2nz,5.0,ZEC,one-time,Logo and brand design,https://api.dicebear.com/9.x/avataaars/svg?seed=Carol,Design
-Dave Okonkwo,zs1fk3j8p2m5xr0w7v4qn6ty9ae1bg3hl0s8kd4cx2n7fw5hp9tv3bq6ja1re4bg0ls7km4dx2n8fz,3.5,ZEC,monthly,Community management,https://api.dicebear.com/9.x/avataaars/svg?seed=Dave,Marketing
-Eve Nakamoto,zs1r4xh7dk9p0f2wn5v8tc3rq1jy6ae0bgl4s7km8dx2n3fw9hp5tv6cq1ja4re7bg0ls2km8dx5nz,2.0,ZEC,weekly,Security audits,https://api.dicebear.com/9.x/avataaars/svg?seed=Eve,Engineering
+name,wallet,amount,currency,schedule,memo,avatar,group,usdc_address,usdc_chain
+Alice Johnson,zs1x4nkru2awv50q67cxa85qcl9hl6wcfe59wjnqepq3ajk3gp0avwg5fe2n2fkgtmqftjhxe7tykl,10.0,ZEC,monthly,March sprint payment,https://api.dicebear.com/9.x/avataaars/svg?seed=Alice,Engineering,,
+Bob Chen,zs1qnzlkj5rd7akv9y2m3fwx0p6e8thl4sg0d2kcn7rj3y5v8xwm1f4qa9b6t2d0h3e7gn5j8ckpz,1.5,ZEC,biweekly,Protocol development,https://api.dicebear.com/9.x/avataaars/svg?seed=Bob,Engineering,,
+Carol Rivera,zs1m7xh3dk4p0f9wn2v5tc8rq6jy1ae3bgl0s7km4dx2n8fw5hp9tv3cq6ja1re4bg0ls7km4dx2nz,250.0,USDC,one-time,Logo and brand design,https://api.dicebear.com/9.x/avataaars/svg?seed=Carol,Design,0x742d35Cc6634C0532925a3b844Bc9e7595f2bD18,ethereum
+Dave Okonkwo,zs1fk3j8p2m5xr0w7v4qn6ty9ae1bg3hl0s8kd4cx2n7fw5hp9tv3bq6ja1re4bg0ls7km4dx2n8fz,3.5,ZEC,monthly,Community management,https://api.dicebear.com/9.x/avataaars/svg?seed=Dave,Marketing,,
+Eve Nakamoto,zs1r4xh7dk9p0f2wn5v8tc3rq1jy6ae0bgl4s7km8dx2n3fw9hp5tv6cq1ja4re7bg0ls2km8dx5nz,2.0,ZEC,weekly,Security audits,https://api.dicebear.com/9.x/avataaars/svg?seed=Eve,Engineering,,

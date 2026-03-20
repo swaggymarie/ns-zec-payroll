@@ -43,6 +43,8 @@ interface RecipientSensitive {
   wallet: string;
   memo?: string;
   avatar?: string;
+  usdcAddress?: string;
+  usdcChain?: string;
 }
 
 function encryptSensitive(data: RecipientSensitive, passphrase: string): string {
@@ -108,6 +110,8 @@ export async function loadConfig(
       wallet: sensitive.wallet,
       memo: sensitive.memo,
       avatar: sensitive.avatar,
+      usdcAddress: sensitive.usdcAddress,
+      usdcChain: sensitive.usdcChain as Recipient["usdcChain"],
       amount: r.amount,
       currency: r.currency as Recipient["currency"],
       schedule: r.schedule as Recipient["schedule"],
@@ -188,7 +192,7 @@ export async function saveConfig(
   for (const r of config.recipients) {
     const nameLookup = r.name.toLowerCase();
     const encryptedData = encryptSensitive(
-      { name: r.name, wallet: r.wallet, memo: r.memo, avatar: r.avatar },
+      { name: r.name, wallet: r.wallet, memo: r.memo, avatar: r.avatar, usdcAddress: r.usdcAddress, usdcChain: r.usdcChain },
       passphrase,
     );
 

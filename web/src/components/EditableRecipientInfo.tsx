@@ -61,6 +61,18 @@ export function EditableRecipientInfo({ detail, onSave }: {
             <span className="text-gray-300">{detail.memo}</span>
           </div>
         )}
+        {detail.currency === "USDC" && detail.usdcAddress && (
+          <>
+            <div className="flex justify-between">
+              <span className="text-gray-400">USDC Address</span>
+              <code className="text-xs text-blue-300">{detail.usdcAddress.slice(0, 12)}...{detail.usdcAddress.slice(-6)}</code>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-gray-400">Chain</span>
+              <span className="text-xs px-1.5 py-0.5 rounded bg-blue-500/15 text-blue-400 capitalize">{detail.usdcChain}</span>
+            </div>
+          </>
+        )}
         <button onClick={() => setEditing(true)}
           className="text-amber-400 text-xs hover:text-amber-300 transition-colors mt-1">
           Edit

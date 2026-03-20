@@ -184,8 +184,13 @@ const server = http.createServer(async (req, res) => {
       const config = requireAuth(res);
       if (!config) return;
       const recipient = JSON.parse(await readBody(req)) as Recipient;
-      if (!recipient.name || !recipient.wallet || !recipient.amount) {
-        return error(res, "name, wallet, and amount are required");
+      if (!recipient.name || !recipient.amount) {
+        return error(res, "name and amount are required");
+      }
+      if (recipient.currency === "USDC") {
+        if (!recipient.usdcAddress) return error(res, "USDC recipients require a destination address");
+      } else {
+        if (!recipient.wallet) return error(res, "Wallet address is required");
       }
       recipient.testTxSent = false;
       recipient.testTxConfirmed = false;
@@ -250,7 +255,7 @@ const server = http.createServer(async (req, res) => {
       );
       if (idx === -1) return error(res, "Recipient not found", 404);
       const updates = JSON.parse(await readBody(req));
-      const allowed = ["amount", "currency", "schedule", "memo", "wallet", "avatar", "group"];
+      const allowed = ["amount", "currency", "schedule", "memo", "wallet", "avatar", "group", "usdcAddress", "usdcChain"];
       for (const key of allowed) {
         if (updates[key] !== undefined) {
           (config.recipients[idx] as unknown as Record<string, unknown>)[key] = updates[key];
@@ -400,12 +405,13 @@ const server = http.createServer(async (req, res) => {
       if (!config.zecPriceUsd) return error(res, "ZEC price not set");
 
       const allPayments = buildBatchPayments(due, config.zecPriceUsd);
+      const zecDue = due.filter((r) => r.currency !== "USDC");
+      const usdcDue = due.filter((r) => r.currency === "USDC");
       const zecPayments = allPayments.filter((p) => p.currency === "ZEC");
-      const usdcPayments = allPayments.filter((p) => p.currency === "USDC");
 
       const result: {
         zec?: { uri: string; payments: BatchPayment[]; totalZec: number };
-        usdc?: { uri: string; payments: BatchPayment[]; totalZec: number; note: string };
+        usdc?: { crossPay: { name: string; amount: number; usdcAddress: string; usdcChain: string; memo: string }[]; totalUsdc: number };
       } = {};
 
       if (zecPayments.length > 0) {
@@ -417,17 +423,16 @@ const server = http.createServer(async (req, res) => {
         };
       }
 
-      if (usdcPayments.length > 0) {
-        const tagged = usdcPayments.map((p) => ({
-          ...p,
-          memo: `[USDC via Zodl NEAR intents] ${p.memo}`,
-        }));
-        const uri = buildZip321Uri(tagged);
+      if (usdcDue.length > 0) {
         result.usdc = {
-          uri,
-          payments: usdcPayments,
-          totalZec: usdcPayments.reduce((s, p) => s + p.amountZec, 0),
-          note: "Send ZEC first, recipient converts via Zodl NEAR intents swap",
+          crossPay: usdcDue.map((r) => ({
+            name: r.name,
+            amount: r.amount,
+            usdcAddress: r.usdcAddress || "",
+            usdcChain: r.usdcChain || "ethereum",
+            memo: r.memo || `Payment to ${r.name}`,
+          })),
+          totalUsdc: usdcDue.reduce((s, r) => s + r.amount, 0),
         };
       }
 

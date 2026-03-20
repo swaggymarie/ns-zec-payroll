@@ -2,6 +2,7 @@ import { useState } from "react";
 import { X } from "lucide-react";
 import { api, type Recipient } from "../lib/api";
 import { AmountInput } from "./AmountInput";
+import { ChainSelect } from "./ChainSelect";
 
 export function EditRecipientForm({ recipient, onDone, onCancel }: {
   recipient: Recipient;
@@ -13,6 +14,8 @@ export function EditRecipientForm({ recipient, onDone, onCancel }: {
   const [schedule, setSchedule] = useState(recipient.schedule);
   const [memo, setMemo] = useState(recipient.memo || "");
   const [group, setGroup] = useState(recipient.group || "");
+  const [usdcAddress, setUsdcAddress] = useState(recipient.usdcAddress || "");
+  const [usdcChain, setUsdcChain] = useState(recipient.usdcChain || "ethereum");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
 
@@ -26,6 +29,8 @@ export function EditRecipientForm({ recipient, onDone, onCancel }: {
         schedule,
         memo,
         group: group || undefined,
+        usdcAddress: currency === "USDC" ? usdcAddress : undefined,
+        usdcChain: currency === "USDC" ? usdcChain as "ethereum" | "solana" | "near" | "base" | "arbitrum" | "polygon" : undefined,
       });
       onDone();
     } catch (e: unknown) {
@@ -47,6 +52,20 @@ export function EditRecipientForm({ recipient, onDone, onCancel }: {
             onAmountChange={setAmount}
             onCurrencyChange={(v) => setCurrency(v as "USD" | "ZEC" | "USDC")} />
         </div>
+        {currency === "USDC" && (
+          <div className="grid grid-cols-3 gap-2">
+            <div className="col-span-2">
+              <label className="text-xs text-gray-500 mb-1 block">USDC Destination Address</label>
+              <input value={usdcAddress} onChange={(e) => setUsdcAddress(e.target.value)}
+                placeholder="0x... or recipient address"
+                className="w-full px-3 py-2 bg-[#0f0f1e] border border-[#2d2d52] rounded-lg text-white text-sm font-mono placeholder-gray-500 focus:outline-none focus:border-amber-500/50" required />
+            </div>
+            <div>
+              <label className="text-xs text-gray-500 mb-1 block">Chain</label>
+              <ChainSelect value={usdcChain} onChange={setUsdcChain} />
+            </div>
+          </div>
+        )}
         <div>
           <label className="text-xs text-gray-500 mb-1 block">Schedule</label>
           <select value={schedule} onChange={(e) => setSchedule(e.target.value as "weekly" | "biweekly" | "monthly" | "one-time")}

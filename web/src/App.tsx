@@ -502,8 +502,35 @@ function MainView({ onLock }: { onLock: () => void }) {
               totalZec={payResult.zec.totalZec} zecPrice={price} copied={copied} onCopy={copyUri} />
           )}
           {payResult.usdc && (
-            <PaymentCard title="USDC (via NEAR Intents)" uri={payResult.usdc.uri} payments={payResult.usdc.payments}
-              totalZec={payResult.usdc.totalZec} zecPrice={price} note={payResult.usdc.note} copied={copied} onCopy={copyUri} />
+            <div className="bg-[#1a1a2e] border border-blue-500/30 rounded-xl p-5">
+              <div className="flex items-center gap-2 mb-3">
+                <h3 className="text-white font-semibold text-sm">USDC via Zodl CrossPay</h3>
+                <span className="text-xs px-1.5 py-0.5 rounded bg-blue-500/15 text-blue-400">
+                  {payResult.usdc.crossPay.length} recipient{payResult.usdc.crossPay.length !== 1 ? "s" : ""}
+                </span>
+              </div>
+              <p className="text-blue-400 text-xs mb-3 bg-blue-500/10 border border-blue-500/20 rounded-lg px-3 py-2">
+                Open Zodl → Pay → select USDC → enter destination address and amount for each.
+              </p>
+              <div className="space-y-2">
+                {payResult.usdc.crossPay.map((cp) => (
+                  <div key={cp.name} className="bg-[#0f0f1e] rounded-lg p-3 flex items-center justify-between gap-3">
+                    <div className="min-w-0">
+                      <div className="text-white text-sm font-medium">{cp.name}</div>
+                      <div className="flex items-center gap-1.5 mt-0.5">
+                        <span className="text-[10px] px-1 py-0.5 rounded bg-blue-500/15 text-blue-400 capitalize">{cp.usdcChain}</span>
+                        <code className="text-[10px] text-gray-500 truncate">{cp.usdcAddress}</code>
+                      </div>
+                    </div>
+                    <span className="text-white font-mono font-bold text-sm shrink-0">${cp.amount.toFixed(2)}</span>
+                  </div>
+                ))}
+              </div>
+              <div className="flex items-center justify-between mt-3 pt-2 border-t border-[#2d2d52]">
+                <span className="text-gray-400 text-xs">Total USDC</span>
+                <span className="text-white font-bold font-mono text-sm">${payResult.usdc.totalUsdc.toFixed(2)}</span>
+              </div>
+            </div>
           )}
 
           <div className="flex gap-3 pt-2">
@@ -514,10 +541,8 @@ function MainView({ onLock }: { onLock: () => void }) {
             <button disabled={confirmLoading} onClick={async () => {
               setConfirmLoading(true);
               try {
-                const zecTotal = payResult.zec?.totalZec ?? 0;
-                const usdcTotal = payResult.usdc?.totalZec ?? 0;
-                const totalZec = zecTotal + usdcTotal;
-                const count = (payResult.zec?.payments.length ?? 0) + (payResult.usdc?.payments.length ?? 0);
+                const totalZec = payResult.zec?.totalZec ?? 0;
+                const count = (payResult.zec?.payments.length ?? 0) + (payResult.usdc?.crossPay.length ?? 0);
                 await api.confirmPay();
                 setPayResult(null);
                 setPreview(null);

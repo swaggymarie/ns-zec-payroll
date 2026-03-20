@@ -8,6 +8,8 @@ export interface PaymentRecord {
   zecPriceUsd: number | null; // ZEC price at time of payment
 }
 
+export type UsdcChain = "ethereum" | "solana" | "near" | "base" | "arbitrum" | "polygon";
+
 export interface Recipient {
   name: string;
   wallet: string; // Zcash shielded address (sapling or unified)
@@ -17,6 +19,8 @@ export interface Recipient {
   group?: string; // e.g. "Engineering", "Design", "Marketing"
   memo?: string;
   avatar?: string; // URL to profile picture
+  usdcAddress?: string; // destination address for USDC CrossPay
+  usdcChain?: UsdcChain; // chain for USDC payout
   testTxSent: boolean;
   testTxConfirmed: boolean;
   lastPaidDate: string | null; // ISO date

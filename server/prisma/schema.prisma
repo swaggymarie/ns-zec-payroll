@@ -24,7 +24,7 @@ model Vault {
 model Recipient {
   id               String   @id @default(cuid())
   vaultId          String   @map("vault_id")
-  /// Encrypted with passphrase (contains: name, wallet, memo, avatar)
+  /// Encrypted with passphrase (contains: name, wallet, memo, avatar, usdcAddress, usdcChain)
   encryptedData    String   @map("encrypted_data")
   /// Encrypted name for lookups (scoped to vault)
   nameLookup       String   @map("name_lookup")

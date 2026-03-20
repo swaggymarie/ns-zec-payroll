@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { api, type PreviewResponse, type PayResponse } from "../lib/api";
+import { api, type PreviewResponse, type PayResponse, type CrossPayInstruction } from "../lib/api";
 import { QRCodeSVG } from "qrcode.react";
 import { Banknote, RefreshCw, Copy, Check } from "lucide-react";
 
@@ -145,23 +145,15 @@ export function PayBatch() {
           )}
 
           {payResult.usdc && (
-            <PaymentCard
-              title="USDC Recipients (via NEAR Intents)"
-              uri={payResult.usdc.uri}
-              payments={payResult.usdc.payments}
-              totalZec={payResult.usdc.totalZec}
-              note={payResult.usdc.note}
-              copied={copied}
-              onCopy={copyUri}
-            />
+            <CrossPayCard crossPay={payResult.usdc.crossPay} totalUsdc={payResult.usdc.totalUsdc} />
           )}
 
           <div className="bg-emerald-500/10 border border-emerald-500/30 rounded-xl p-5 text-center">
             <p className="text-emerald-400 font-medium">
-              ZIP-321 multi-payment URI generated
+              {payResult.zec ? "ZIP-321 multi-payment URI generated" : "CrossPay instructions ready"}
             </p>
             <p className="text-gray-400 text-sm mt-1">
-              Copy the URI or scan the QR code with a ZIP-321 compatible wallet.
+              {payResult.zec ? "Copy the URI or scan the QR code with a ZIP-321 compatible wallet." : "Use Zodl CrossPay to send USDC to each recipient."}
             </p>
           </div>
 
@@ -236,6 +228,59 @@ function PaymentCard({
             <code className="text-xs text-amber-400 break-all leading-relaxed">{uri}</code>
           </div>
         </div>
+      </div>
+    </div>
+  );
+}
+
+function CrossPayCard({ crossPay, totalUsdc }: { crossPay: CrossPayInstruction[]; totalUsdc: number }) {
+  const [copiedIdx, setCopiedIdx] = useState<number | null>(null);
+
+  function copyAddress(addr: string, idx: number) {
+    navigator.clipboard.writeText(addr);
+    setCopiedIdx(idx);
+    setTimeout(() => setCopiedIdx(null), 2000);
+  }
+
+  return (
+    <div className="bg-[#1a1a2e] border border-blue-500/30 rounded-xl p-6">
+      <div className="flex items-center gap-2 mb-4">
+        <h3 className="text-white font-semibold">USDC via Zodl CrossPay</h3>
+        <span className="text-xs px-2 py-0.5 rounded bg-blue-500/15 text-blue-400">
+          {crossPay.length} recipient{crossPay.length !== 1 ? "s" : ""}
+        </span>
+      </div>
+
+      <div className="mb-4 text-blue-400 text-sm bg-blue-500/10 border border-blue-500/20 rounded-lg px-3 py-2">
+        Use Zodl's CrossPay to send each payment. Open Zodl → Pay → select USDC as output currency → enter the destination address and amount.
+      </div>
+
+      <div className="space-y-3">
+        {crossPay.map((cp, i) => (
+          <div key={cp.name} className="bg-[#0f0f1e] rounded-lg p-4 space-y-2">
+            <div className="flex items-center justify-between">
+              <span className="text-white font-medium">{cp.name}</span>
+              <span className="text-white font-mono font-bold">${cp.amount.toFixed(2)} USDC</span>
+            </div>
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2 min-w-0">
+                <span className="text-xs px-1.5 py-0.5 rounded bg-blue-500/15 text-blue-400 capitalize shrink-0">{cp.usdcChain}</span>
+                <code className="text-xs text-gray-400 truncate">{cp.usdcAddress}</code>
+              </div>
+              <button onClick={() => copyAddress(cp.usdcAddress, i)}
+                className="flex items-center gap-1 text-xs text-gray-400 hover:text-amber-400 transition-colors shrink-0">
+                {copiedIdx === i ? <Check className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
+                {copiedIdx === i ? "Copied" : "Copy"}
+              </button>
+            </div>
+            {cp.memo && <div className="text-xs text-gray-500">{cp.memo}</div>}
+          </div>
+        ))}
+      </div>
+
+      <div className="flex items-center justify-between mt-4 pt-3 border-t border-[#2d2d52]">
+        <span className="text-gray-400 font-medium text-sm">Total USDC</span>
+        <span className="text-white font-bold font-mono">${totalUsdc.toFixed(2)}</span>
       </div>
     </div>
   );

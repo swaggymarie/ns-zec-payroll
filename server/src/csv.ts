@@ -19,6 +19,8 @@ export function importCsv(filePath: string): Recipient[] {
     const memo = row["memo"] || row["Memo"] || "";
     const avatar = row["avatar"] || row["Avatar"] || "";
     const group = row["group"] || row["Group"] || "";
+    const usdcAddress = row["usdc_address"] || row["usdcAddress"] || row["USDC Address"] || "";
+    const usdcChain = (row["usdc_chain"] || row["usdcChain"] || row["USDC Chain"] || "").toLowerCase();
 
     if (!name || !wallet || !amountStr) {
       throw new Error(`Row ${i + 1}: missing required field (name, wallet, or amount)`);
@@ -38,6 +40,15 @@ export function importCsv(filePath: string): Recipient[] {
       throw new Error(`Row ${i + 1}: schedule must be weekly, biweekly, monthly, or one-time (got "${schedule}")`);
     }
 
+    if (currency === "USDC" && !usdcAddress) {
+      throw new Error(`Row ${i + 1}: USDC recipients require a usdc_address`);
+    }
+
+    const validChains = ["ethereum", "solana", "near", "base", "arbitrum", "polygon"];
+    if (currency === "USDC" && usdcChain && !validChains.includes(usdcChain)) {
+      throw new Error(`Row ${i + 1}: usdc_chain must be one of ${validChains.join(", ")} (got "${usdcChain}")`);
+    }
+
     return {
       name,
       wallet,
@@ -47,6 +58,8 @@ export function importCsv(filePath: string): Recipient[] {
       memo,
       avatar: avatar || undefined,
       group: group || undefined,
+      usdcAddress: usdcAddress || undefined,
+      usdcChain: (usdcChain || "ethereum") as Recipient["usdcChain"],
       testTxSent: false,
       testTxConfirmed: false,
       lastPaidDate: null,

@@ -3,7 +3,7 @@ import { Check } from "lucide-react";
 
 const CURRENCIES: { value: string; label: string; logo?: string; disabled?: boolean }[] = [
   { value: "ZEC", label: "ZEC", logo: "/zec-logo.png" },
-  { value: "USDC", label: "USDC", disabled: true },
+  { value: "USDC", label: "USDC" },
 ];
 
 export function AmountInput({ amount, currency, onAmountChange, onCurrencyChange, required, className = "" }: {
@@ -78,7 +78,6 @@ export function AmountInput({ amount, currency, onAmountChange, onCurrencyChange
                 <span className="w-5 h-5 rounded-full bg-blue-500/15 flex items-center justify-center text-[10px] font-bold text-blue-400">$</span>
               )}
               <span className="font-medium">{c.label}</span>
-              {c.disabled && <span className="text-[10px] text-gray-600 ml-auto">soon</span>}
               {!c.disabled && c.value === currency && <Check className="w-3.5 h-3.5 text-amber-400 ml-auto" />}
             </button>
           ))}

@@ -57,6 +57,7 @@ export interface TelegramConfig {
 }
 
 export type PaySchedule = "weekly" | "biweekly" | "monthly" | "one-time";
+export type UsdcChain = "ethereum" | "solana" | "near" | "base" | "arbitrum" | "polygon";
 
 export interface PaymentRecord {
   date: string;
@@ -75,6 +76,8 @@ export interface Recipient {
   group?: string;
   memo?: string;
   avatar?: string;
+  usdcAddress?: string;
+  usdcChain?: UsdcChain;
   testTxSent: boolean;
   testTxConfirmed: boolean;
   lastPaidDate: string | null;
@@ -105,9 +108,17 @@ export interface PreviewResponse {
   recipientCount: number;
 }
 
+export interface CrossPayInstruction {
+  name: string;
+  amount: number;
+  usdcAddress: string;
+  usdcChain: UsdcChain;
+  memo: string;
+}
+
 export interface PayResponse {
   zec?: { uri: string; payments: BatchPayment[]; totalZec: number };
-  usdc?: { uri: string; payments: BatchPayment[]; totalZec: number; note: string };
+  usdc?: { crossPay: CrossPayInstruction[]; totalUsdc: number };
 }
 
 export interface ScheduleResponse {

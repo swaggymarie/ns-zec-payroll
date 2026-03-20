@@ -184,7 +184,7 @@ export function UnlockScreen({ onUnlock }: { onUnlock: () => void }) {
         </div>
 
         <p className="text-center text-gray-600 text-xs mt-4">
-          AES-256-GCM encrypted &middot; Data never leaves your machine
+          AES-256-GCM encrypted &middot; Your passphrase never leaves your device
         </p>
       </div>
     </div>

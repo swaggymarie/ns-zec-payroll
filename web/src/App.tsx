@@ -141,7 +141,7 @@ function MainView({ onLock }: { onLock: () => void }) {
     try {
       const result = await api.testTx(name);
       setTestQr(result);
-      refresh();
+      setRecipients((prev) => prev.map((r) => r.name === name ? { ...r, testTxSent: true } : r));
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : "Failed");
     }
@@ -149,7 +149,7 @@ function MainView({ onLock }: { onLock: () => void }) {
 
   async function handleConfirmTest(name: string) {
     await api.confirmTest(name);
-    refresh();
+    setRecipients((prev) => prev.map((r) => r.name === name ? { ...r, testTxConfirmed: true } : r));
   }
 
   async function handleCsvUpload(e: React.ChangeEvent<HTMLInputElement>) {
@@ -214,7 +214,7 @@ function MainView({ onLock }: { onLock: () => void }) {
   return (
     <div className="min-h-screen bg-[#0f0f1e] flex flex-col">
       {/* Header */}
-      <header className="bg-[#0a0a18] px-4 sm:px-8 py-3 sm:py-4 flex items-center justify-between gap-2">
+      <header className="sticky top-0 z-50 bg-[#0a0a18] px-4 sm:px-8 py-3 sm:py-4 flex items-center justify-between gap-2">
         <h1 className="text-base sm:text-xl font-bold text-white flex items-center gap-2 shrink-0">
           <img src="/zec-logo.png" alt="ZEC" className="w-5 h-5 sm:w-6 sm:h-6" />
           <span className="hidden sm:inline">ZEC Payroll</span>

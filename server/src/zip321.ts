@@ -36,21 +36,26 @@ export function buildZip321Uri(payments: BatchPayment[]): string {
     throw new Error("Cannot build URI with zero payments");
   }
 
-  const parts: string[] = [];
+  const first = payments[0];
+  const params: string[] = [];
 
-  for (let i = 0; i < payments.length; i++) {
+  // First payment: address goes in the path, params are un-indexed
+  params.push(`amount=${formatAmount(first.amountZec)}`);
+  if (first.memo) {
+    params.push(`memo=${toBase64url(first.memo)}`);
+  }
+
+  // Additional payments: indexed params (address.1=, amount.1=, etc.)
+  for (let i = 1; i < payments.length; i++) {
     const p = payments[i];
-    const suffix = i === 0 ? "" : `.${i}`;
-
-    parts.push(`address${suffix}=${p.wallet}`);
-    parts.push(`amount${suffix}=${formatAmount(p.amountZec)}`);
-
+    params.push(`address.${i}=${p.wallet}`);
+    params.push(`amount.${i}=${formatAmount(p.amountZec)}`);
     if (p.memo) {
-      parts.push(`memo${suffix}=${toBase64url(p.memo)}`);
+      params.push(`memo.${i}=${toBase64url(p.memo)}`);
     }
   }
 
-  return `zcash:?${parts.join("&")}`;
+  return `zcash:${first.wallet}?${params.join("&")}`;
 }
 
 /**

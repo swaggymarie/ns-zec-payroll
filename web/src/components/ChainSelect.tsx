@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, type ReactNode } from "react";
 import { Check } from "lucide-react";
 
-const CHAINS: { value: string; label: string; icon: ReactNode }[] = [
+export const CHAINS: { value: string; label: string; icon: ReactNode }[] = [
   {
     value: "ethereum", label: "Ethereum",
     icon: <svg viewBox="0 0 32 32" className="w-5 h-5"><path fill="#627EEA" d="M16 0l-.4.2v21.8l.4.2 10-5.9z"/><path fill="#8C8C8C" d="M16 0L6 16.3l10 5.9V0z"/><path fill="#627EEA" d="M16 24.1l-.2.3v7.7l.2.5L26 18.2z"/><path fill="#8C8C8C" d="M16 32.6V24.1L6 18.2z"/><path fill="#3C3C3B" d="M16 22.2l10-5.9L16 12z"/><path fill="#8C8C8C" d="M6 16.3l10 5.9V12z"/></svg>,

@@ -1,7 +1,7 @@
 import { QRCodeSVG } from "qrcode.react";
-import { Copy, Check } from "lucide-react";
+import { Copy, Check, CheckCircle } from "lucide-react";
 
-export function PaymentCard({ title, uri, payments, totalZec, zecPrice, note, copied, onCopy }: {
+export function PaymentCard({ title, uri, payments, totalZec, zecPrice, note, copied, onCopy, confirmed, onConfirm }: {
   title: string;
   uri: string;
   payments: { name: string; amountZec: number; currency: string }[];
@@ -10,6 +10,8 @@ export function PaymentCard({ title, uri, payments, totalZec, zecPrice, note, co
   note?: string;
   copied: string | null;
   onCopy: (uri: string, label: string) => void;
+  confirmed?: boolean;
+  onConfirm?: () => void;
 }) {
   return (
     <div className="bg-[#0f0f1e] rounded-xl overflow-hidden">
@@ -30,9 +32,9 @@ export function PaymentCard({ title, uri, payments, totalZec, zecPrice, note, co
             {copied === title ? "Copied!" : "Copy URI"}
           </button>
         </div>
-        <div className="flex-1 p-5">
+        <div className="flex-1 p-5 flex flex-col">
           <div className="text-xs text-gray-500 uppercase tracking-wider font-medium mb-3">Recipients</div>
-          <div className="space-y-0">
+          <div className="space-y-0 flex-1">
             {payments.map((p) => (
               <div key={p.name} className="flex items-center justify-between py-2 border-b border-[#2d2d52]/30 last:border-0">
                 <span className="text-white text-sm">{p.name}</span>
@@ -43,6 +45,20 @@ export function PaymentCard({ title, uri, payments, totalZec, zecPrice, note, co
               </div>
             ))}
           </div>
+          {onConfirm && (
+            <div className="flex justify-end mt-4 pt-3 border-t border-[#2d2d52]">
+              {confirmed ? (
+                <div className="flex items-center gap-1.5 text-emerald-400 text-sm font-medium">
+                  <CheckCircle className="w-4 h-4" /> Paid
+                </div>
+              ) : (
+                <button onClick={onConfirm}
+                  className="px-4 py-2 bg-emerald-500 text-white rounded-lg font-medium hover:bg-emerald-400 transition-colors text-sm flex items-center gap-2">
+                  <CheckCircle className="w-4 h-4" /> Payment Made
+                </button>
+              )}
+            </div>
+          )}
         </div>
       </div>
     </div>

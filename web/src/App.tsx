@@ -8,6 +8,7 @@ import { AddRecipientForm } from "./components/AddRecipientForm";
 import { EditRecipientForm } from "./components/EditRecipientForm";
 import { EditableRecipientInfo } from "./components/EditableRecipientInfo";
 import { TelegramSettings } from "./components/TelegramSettings";
+import { CHAINS } from "./components/ChainSelect";
 import { QRCodeSVG } from "qrcode.react";
 import {
   Lock, CheckCircle, Pencil, Settings, Search, Copy, Check,
@@ -51,6 +52,9 @@ function MainView({ onLock }: { onLock: () => void }) {
   const [priceLoading, setPriceLoading] = useState(false);
   const [payLoading, setPayLoading] = useState(false);
   const [confirmLoading, setConfirmLoading] = useState(false);
+  const [usdcStep, setUsdcStep] = useState(0);
+  const [usdcConfirmed, setUsdcConfirmed] = useState<Set<number>>(new Set());
+  const [zecConfirmed, setZecConfirmed] = useState(false);
   const [error, setError] = useState("");
 
   const [showAdd, setShowAdd] = useState(false);
@@ -184,6 +188,9 @@ function MainView({ onLock }: { onLock: () => void }) {
     setPayLoading(true);
     try {
       const data = await api.pay();
+      setUsdcStep(0);
+      setUsdcConfirmed(new Set());
+      setZecConfirmed(false);
       setPayResult(data);
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : "Failed to generate payment");
@@ -515,25 +522,52 @@ function MainView({ onLock }: { onLock: () => void }) {
 
           {payResult.zec && (
             <PaymentCard title="ZEC" uri={payResult.zec.uri} payments={payResult.zec.payments}
-              totalZec={payResult.zec.totalZec} zecPrice={price} copied={copied} onCopy={copyUri} />
+              totalZec={payResult.zec.totalZec} zecPrice={price} copied={copied} onCopy={copyUri}
+              confirmed={zecConfirmed} onConfirm={() => setZecConfirmed(true)} />
           )}
-          {payResult.usdc?.crossPay && payResult.usdc.crossPay.length > 0 && (
-            <div className="bg-[#0f0f1e] rounded-xl overflow-hidden">
-              <div className="px-5 py-3 border-b border-[#2d2d52] flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <h3 className="text-white font-medium text-sm">USDC via Zodl CrossPay</h3>
-                  <span className="text-xs px-1.5 py-0.5 rounded bg-blue-500/15 text-blue-400">
-                    {payResult.usdc.crossPay.length} recipient{payResult.usdc.crossPay.length !== 1 ? "s" : ""}
-                  </span>
+          {payResult.usdc?.crossPay && payResult.usdc.crossPay.length > 0 && (() => {
+            const cp = payResult.usdc!.crossPay[usdcStep];
+            const total = payResult.usdc!.crossPay.length;
+            return (
+              <div className="bg-[#0f0f1e] rounded-xl overflow-hidden">
+                <div className="px-5 py-3 border-b border-[#2d2d52] flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <h3 className="text-white font-medium text-sm">USDC via Zodl CrossPay</h3>
+                    <span className="text-xs px-1.5 py-0.5 rounded bg-blue-500/15 text-blue-400">
+                      {usdcStep + 1} / {total}
+                    </span>
+                  </div>
+                  <span className="text-white font-bold font-mono text-sm">${payResult.usdc!.totalUsdc.toFixed(2)} total</span>
                 </div>
-                <span className="text-white font-bold font-mono text-sm">${payResult.usdc.totalUsdc.toFixed(2)} USDC</span>
-              </div>
-              <div className="divide-y divide-[#2d2d52]/30">
-                {payResult.usdc.crossPay.map((cp) => (
-                  <div key={cp.name} className="flex flex-col sm:flex-row gap-4 p-5">
+
+                {/* Step-by-step explainer */}
+                <div className="bg-blue-500/10 px-5 py-3 border-b border-blue-500/20">
+                  <div className="flex gap-4 text-xs justify-center">
+                    <div className="flex items-center gap-1.5 text-white">
+                      <span className="w-5 h-5 rounded-full bg-blue-500 flex items-center justify-center text-[10px] font-bold text-white">1</span>
+                      Open Zodl → Pay
+                    </div>
+                    <div className="flex items-center gap-1.5 text-white">
+                      <span className="w-5 h-5 rounded-full bg-blue-500 flex items-center justify-center text-[10px] font-bold text-white">2</span>
+                      Select token and chain
+                    </div>
+                    <div className="flex items-center gap-1.5 text-white">
+                      <span className="w-5 h-5 rounded-full bg-blue-500 flex items-center justify-center text-[10px] font-bold text-white">3</span>
+                      Scan QR or paste address
+                    </div>
+                  </div>
+                </div>
+
+                {/* Current recipient */}
+                <div className="p-5">
+                  <div className="flex items-center justify-between mb-4">
+                    <span className="text-white font-medium">{cp.name}</span>
+                    <span className="text-white font-mono font-bold text-lg">${cp.amount.toFixed(2)}</span>
+                  </div>
+                  <div className="flex flex-col sm:flex-row gap-5">
                     <div className="flex flex-col items-center gap-2 shrink-0">
                       <div className="bg-white rounded-xl p-3">
-                        <QRCodeSVG value={cp.usdcAddress} size={120} />
+                        <QRCodeSVG value={cp.usdcAddress} size={160} />
                       </div>
                       <button onClick={() => copyUri(cp.usdcAddress, cp.name)}
                         className="flex items-center gap-1.5 px-2.5 py-1 text-[10px] rounded-lg border border-[#2d2d52] text-gray-400 hover:text-blue-400 hover:border-blue-500/30 transition-colors">
@@ -541,56 +575,102 @@ function MainView({ onLock }: { onLock: () => void }) {
                         {copied === cp.name ? "Copied!" : "Copy address"}
                       </button>
                     </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center justify-between mb-2">
-                        <span className="text-white font-medium text-sm">{cp.name}</span>
-                        <span className="text-white font-mono font-bold text-sm">${cp.amount.toFixed(2)}</span>
-                      </div>
-                      <div className="space-y-1.5">
-                        <div className="flex items-center gap-1.5">
-                          <span className="text-[10px] px-1.5 py-0.5 rounded bg-blue-500/15 text-blue-400 capitalize">{cp.usdcChain}</span>
+                    {(() => {
+                      const chain = CHAINS.find((c) => c.value === cp.usdcChain);
+                      return (
+                        <div className="flex-1 min-w-0 space-y-3">
+                          <div className="flex items-center gap-3 bg-blue-500/10 border border-blue-500/20 rounded-lg px-3 py-2.5">
+                            <div className="flex items-center gap-1.5">
+                              <svg viewBox="0 0 32 32" className="w-5 h-5"><circle cx="16" cy="16" r="16" fill="#2775CA"/><path fill="#fff" d="M20.3 18.4c0-2.1-1.3-2.8-3.8-3.1-1.8-.3-2.2-.7-2.2-1.5s.7-1.3 1.8-1.3c1 0 1.6.4 1.9 1.2a.4.4 0 00.4.3h1a.4.4 0 00.4-.4 3 3 0 00-2.7-2.5v-1.5a.4.4 0 00-.4-.4h-.9a.4.4 0 00-.4.4V11c-1.8.2-3 1.3-3 2.8 0 2 1.2 2.7 3.8 3 1.7.3 2.2.8 2.2 1.6s-.9 1.4-2 1.4c-1.5 0-2-.6-2.2-1.4a.4.4 0 00-.4-.3h-1a.4.4 0 00-.3.5c.3 1.4 1.2 2.3 3 2.5v1.5c0 .2.1.4.3.4h1c.2 0 .4-.2.4-.4v-1.5c1.8-.3 3-1.4 3-3z"/></svg>
+                              <span className="text-sm font-bold text-white">USDC</span>
+                            </div>
+                            <span className="text-gray-500 text-xs">on</span>
+                            <div className="flex items-center gap-1.5">
+                              {chain && <div className="w-5 h-5">{chain.icon}</div>}
+                              <span className="text-sm font-bold text-white">{chain?.label ?? cp.usdcChain}</span>
+                            </div>
+                          </div>
+                          <code className="text-xs text-gray-400 break-all block bg-[#1a1a2e] rounded-lg px-3 py-2">{cp.usdcAddress}</code>
+                          {cp.memo && <p className="text-xs text-gray-500">{cp.memo}</p>}
                         </div>
-                        <code className="text-xs text-gray-400 break-all block">{cp.usdcAddress}</code>
-                        {cp.memo && <p className="text-xs text-gray-500">{cp.memo}</p>}
-                      </div>
-                    </div>
+                      );
+                    })()}
                   </div>
-                ))}
-              </div>
-            </div>
-          )}
+                </div>
 
-          <div className="flex gap-3 pt-2">
-            <button onClick={() => setPayResult(null)}
-              className="flex-1 py-2.5 bg-[#2d2d52] text-gray-300 rounded-lg font-medium hover:bg-[#3d3d62] transition-colors text-sm">
-              Close
-            </button>
-            <button disabled={confirmLoading} onClick={async () => {
-              setConfirmLoading(true);
-              try {
-                const totalZec = payResult.zec?.totalZec ?? 0;
-                const count = (payResult.zec?.payments.length ?? 0) + (payResult.usdc?.crossPay?.length ?? 0);
-                await api.confirmPay();
-                setPayResult(null);
-                setPreview(null);
-                setLastPayment({ totalZec, totalUsd: price ? totalZec * price : 0, count });
-                refresh();
-                setTimeout(() => setLastPayment(null), 8000);
-              } catch (e: unknown) {
-                setError(e instanceof Error ? e.message : "Failed to confirm payment");
-              } finally {
-                setConfirmLoading(false);
-              }
-            }}
-              className="flex-1 py-2.5 bg-emerald-500 text-white rounded-lg font-medium hover:bg-emerald-400 disabled:opacity-50 transition-colors text-sm flex items-center justify-center gap-2">
-              {confirmLoading ? (
-                <RefreshCw className="w-4 h-4 animate-spin" />
-              ) : (
-                <CheckCircle className="w-4 h-4" />
-              )}
-              {confirmLoading ? "Confirming..." : "Payment Made"}
-            </button>
-          </div>
+                {/* Navigation & Confirm */}
+                <div className="px-5 py-3 border-t border-[#2d2d52] flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    {total > 1 && (
+                      <>
+                        <button onClick={() => setUsdcStep(Math.max(0, usdcStep - 1))} disabled={usdcStep === 0}
+                          className="px-3 py-1.5 text-xs text-gray-400 hover:text-white transition-colors disabled:opacity-30">
+                          Previous
+                        </button>
+                        <div className="flex gap-1.5">
+                          {payResult.usdc!.crossPay.map((_, i) => (
+                            <button key={i} onClick={() => setUsdcStep(i)}
+                              className={`w-2.5 h-2.5 rounded-full transition-colors ${usdcConfirmed.has(i) ? "bg-emerald-400" : i === usdcStep ? "bg-blue-400" : "bg-[#2d2d52] hover:bg-[#3d3d62]"}`} />
+                          ))}
+                        </div>
+                        <button onClick={() => setUsdcStep(Math.min(total - 1, usdcStep + 1))} disabled={usdcStep === total - 1}
+                          className="px-3 py-1.5 text-xs text-blue-400 hover:text-blue-300 transition-colors disabled:opacity-30">
+                          Next
+                        </button>
+                      </>
+                    )}
+                  </div>
+                  {usdcConfirmed.has(usdcStep) ? (
+                    <div className="flex items-center gap-1.5 text-emerald-400 text-sm font-medium">
+                      <CheckCircle className="w-4 h-4" /> Paid
+                    </div>
+                  ) : (
+                    <button onClick={() => {
+                      const next = new Set(usdcConfirmed);
+                      next.add(usdcStep);
+                      setUsdcConfirmed(next);
+                      if (usdcStep < total - 1) setUsdcStep(usdcStep + 1);
+                    }}
+                      className="px-4 py-2 bg-emerald-500 text-white rounded-lg font-medium hover:bg-emerald-400 transition-colors text-sm flex items-center gap-2">
+                      <CheckCircle className="w-4 h-4" /> Payment Made
+                    </button>
+                  )}
+                </div>
+              </div>
+            );
+          })()}
+
+          {(() => {
+            const hasZec = !!payResult.zec;
+            const usdcTotal = payResult.usdc?.crossPay?.length ?? 0;
+            const allDone = (!hasZec || zecConfirmed) && usdcConfirmed.size >= usdcTotal;
+            return allDone ? (
+              <AllPaidBanner onComplete={async () => {
+                setConfirmLoading(true);
+                try {
+                  const totalZec = payResult.zec?.totalZec ?? 0;
+                  const count = (payResult.zec?.payments.length ?? 0) + usdcTotal;
+                  await api.confirmPay();
+                  setPayResult(null);
+                  setPreview(null);
+                  setLastPayment({ totalZec, totalUsd: price ? totalZec * price : 0, count });
+                  refresh();
+                  setTimeout(() => setLastPayment(null), 8000);
+                } catch (e: unknown) {
+                  setError(e instanceof Error ? e.message : "Failed to confirm payment");
+                } finally {
+                  setConfirmLoading(false);
+                }
+              }} />
+            ) : (
+              <div className="pt-2">
+                <button onClick={() => setPayResult(null)}
+                  className="w-full py-2.5 bg-[#2d2d52] text-gray-300 rounded-lg font-medium hover:bg-[#3d3d62] transition-colors text-sm">
+                  Close
+                </button>
+              </div>
+            );
+          })()}
         </div>)}
       </Modal>
 
@@ -738,6 +818,26 @@ function MainView({ onLock }: { onLock: () => void }) {
           </button>
         </>)}
       </Modal>
+    </div>
+  );
+}
+
+function AllPaidBanner({ onComplete }: { onComplete: () => void }) {
+  const [phase, setPhase] = useState<"celebrate" | "closing">("celebrate");
+
+  useEffect(() => {
+    const t1 = setTimeout(() => setPhase("closing"), 1500);
+    const t2 = setTimeout(() => onComplete(), 2500);
+    return () => { clearTimeout(t1); clearTimeout(t2); };
+  }, [onComplete]);
+
+  return (
+    <div className={`pt-4 text-center transition-opacity duration-500 ${phase === "closing" ? "opacity-0" : "opacity-100"}`}>
+      <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-xl py-6 px-4">
+        <div className="text-4xl mb-3 animate-bounce">&#10003;</div>
+        <div className="text-emerald-400 text-lg font-bold">All payments confirmed!</div>
+        <div className="text-gray-500 text-sm mt-1">Closing...</div>
+      </div>
     </div>
   );
 }

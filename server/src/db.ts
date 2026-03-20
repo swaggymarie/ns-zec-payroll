@@ -41,6 +41,8 @@ const PROBE_PLAINTEXT = "zcash-payroll-ok";
 interface RecipientSensitive {
   name: string;
   wallet: string;
+  amount: number;
+  currency: string;
   memo?: string;
   avatar?: string;
   usdcAddress?: string;
@@ -112,21 +114,27 @@ export async function loadConfig(
       avatar: sensitive.avatar,
       usdcAddress: sensitive.usdcAddress,
       usdcChain: sensitive.usdcChain as Recipient["usdcChain"],
-      amount: r.amount,
-      currency: r.currency as Recipient["currency"],
+      amount: sensitive.amount ?? r.amount,
+      currency: (sensitive.currency ?? r.currency) as Recipient["currency"],
       schedule: r.schedule as Recipient["schedule"],
       group: r.groupName ?? undefined,
       testTxSent: r.testTxSent,
       testTxConfirmed: r.testTxConfirmed,
       lastPaidDate: r.lastPaidDate?.toISOString() ?? null,
       paid: r.paid,
-      history: r.history.map((h) => ({
-        date: h.date.toISOString(),
-        amountZec: h.amountZec,
-        amountOriginal: h.amountOriginal,
-        currency: h.currency as PaymentRecord["currency"],
-        zecPriceUsd: h.zecPriceUsd,
-      })),
+      history: r.history.map((h) => {
+        let histData: { amountZec: number; amountOriginal: number; currency: string; zecPriceUsd: number | null } | undefined;
+        if (h.encryptedData) {
+          try { histData = JSON.parse(decrypt(h.encryptedData, passphrase)); } catch { /* fallback to columns */ }
+        }
+        return {
+          date: h.date.toISOString(),
+          amountZec: histData?.amountZec ?? h.amountZec,
+          amountOriginal: histData?.amountOriginal ?? h.amountOriginal,
+          currency: (histData?.currency ?? h.currency) as PaymentRecord["currency"],
+          zecPriceUsd: histData?.zecPriceUsd ?? h.zecPriceUsd,
+        };
+      }),
     };
   });
 
@@ -192,7 +200,7 @@ export async function saveConfig(
   for (const r of config.recipients) {
     const nameLookup = r.name.toLowerCase();
     const encryptedData = encryptSensitive(
-      { name: r.name, wallet: r.wallet, memo: r.memo, avatar: r.avatar, usdcAddress: r.usdcAddress, usdcChain: r.usdcChain },
+      { name: r.name, wallet: r.wallet, amount: r.amount, currency: r.currency, memo: r.memo, avatar: r.avatar, usdcAddress: r.usdcAddress, usdcChain: r.usdcChain },
       passphrase,
     );
 
@@ -203,8 +211,8 @@ export async function saveConfig(
         where: { id: dbId },
         data: {
           encryptedData,
-          amount: r.amount,
-          currency: r.currency,
+          amount: 0,
+          currency: "ENC",
           schedule: r.schedule,
           groupName: r.group ?? null,
           testTxSent: r.testTxSent,
@@ -221,10 +229,11 @@ export async function saveConfig(
           data: r.history.map((h) => ({
             recipientId: dbId,
             date: new Date(h.date),
-            amountZec: h.amountZec,
-            amountOriginal: h.amountOriginal,
-            currency: h.currency,
-            zecPriceUsd: h.zecPriceUsd,
+            amountZec: 0,
+            amountOriginal: 0,
+            currency: "ENC",
+            zecPriceUsd: null,
+            encryptedData: encrypt(JSON.stringify({ amountZec: h.amountZec, amountOriginal: h.amountOriginal, currency: h.currency, zecPriceUsd: h.zecPriceUsd }), passphrase),
           })),
         });
       }
@@ -233,8 +242,8 @@ export async function saveConfig(
         where: { vaultId_nameLookup: { vaultId, nameLookup } },
         update: {
           encryptedData,
-          amount: r.amount,
-          currency: r.currency,
+          amount: 0,
+          currency: "ENC",
           schedule: r.schedule,
           groupName: r.group ?? null,
           testTxSent: r.testTxSent,
@@ -246,8 +255,8 @@ export async function saveConfig(
           vaultId,
           encryptedData,
           nameLookup,
-          amount: r.amount,
-          currency: r.currency,
+          amount: 0,
+          currency: "ENC",
           schedule: r.schedule,
           groupName: r.group ?? null,
           testTxSent: r.testTxSent,

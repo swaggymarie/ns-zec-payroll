@@ -24,11 +24,13 @@ model Vault {
 model Recipient {
   id               String   @id @default(cuid())
   vaultId          String   @map("vault_id")
-  /// Encrypted with passphrase (contains: name, wallet, memo, avatar, usdcAddress, usdcChain)
+  /// Encrypted with passphrase (contains: name, wallet, amount, currency, memo, avatar, usdcAddress, usdcChain)
   encryptedData    String   @map("encrypted_data")
   /// Encrypted name for lookups (scoped to vault)
   nameLookup       String   @map("name_lookup")
+  /// @deprecated — now encrypted in encryptedData, kept for backward compat
   amount           Float
+  /// @deprecated — now encrypted in encryptedData, kept for backward compat
   currency         String
   schedule         String
   groupName        String?  @map("group_name")
@@ -50,10 +52,16 @@ model PaymentRecord {
   id              String   @id @default(cuid())
   recipientId     String   @map("recipient_id")
   date            DateTime
+  /// @deprecated — now encrypted in encryptedData, kept for backward compat
   amountZec       Float    @map("amount_zec")
+  /// @deprecated — now encrypted in encryptedData, kept for backward compat
   amountOriginal  Float    @map("amount_original")
+  /// @deprecated — now encrypted in encryptedData, kept for backward compat
   currency        String
+  /// @deprecated — now encrypted in encryptedData, kept for backward compat
   zecPriceUsd     Float?   @map("zec_price_usd")
+  /// Encrypted (contains: amountZec, amountOriginal, currency, zecPriceUsd)
+  encryptedData   String?  @map("encrypted_data")
   createdAt       DateTime @default(now()) @map("created_at")
 
   recipient       Recipient @relation(fields: [recipientId], references: [id], onDelete: Cascade)

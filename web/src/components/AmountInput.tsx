@@ -31,11 +31,14 @@ export function AmountInput({ amount, currency, onAmountChange, onCurrencyChange
     <div className={`relative ${className}`} ref={ref}>
       <div className="flex items-center bg-[#0f0f1e] border border-[#2d2d52] rounded-xl focus-within:border-amber-500/50 transition-colors">
         <input
-          type="number"
-          step="any"
+          type="text"
+          inputMode="decimal"
           placeholder="0.00"
           value={amount}
-          onChange={(e) => onAmountChange(e.target.value)}
+          onChange={(e) => {
+            const v = e.target.value;
+            if (v === "" || /^\d*\.?\d*$/.test(v)) onAmountChange(v);
+          }}
           required={required}
           className="flex-1 bg-transparent px-4 py-3 text-white text-lg font-mono placeholder-gray-600 focus:outline-none min-w-0"
         />

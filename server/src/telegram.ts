@@ -74,5 +74,6 @@ export async function sendDuePaymentNotification(
   lines.push(``);
   lines.push(`Open your payroll dashboard to initiate payment.`);
 
-  return sendMessage(config.chatId, lines.join("\n"));
+  const result = await sendMessage(config.chatId, lines.join("\n"));
+  return result !== null;
 }

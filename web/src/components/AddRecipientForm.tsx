@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { X } from "lucide-react";
 import { api } from "../lib/api";
-import { Avatar } from "./Avatar";
 import { AmountInput } from "./AmountInput";
 
 export function AddRecipientForm({ onDone, onCancel }: { onDone: () => void; onCancel: () => void }) {

@@ -51,7 +51,6 @@ function MainView({ onLock }: { onLock: () => void }) {
   const [loading, setLoading] = useState(true);
   const [priceLoading, setPriceLoading] = useState(false);
   const [payLoading, setPayLoading] = useState(false);
-  const [confirmLoading, setConfirmLoading] = useState(false);
   const [usdcStep, setUsdcStep] = useState(0);
   const [usdcConfirmed, setUsdcConfirmed] = useState<Set<number>>(new Set());
   const [zecConfirmed, setZecConfirmed] = useState(false);
@@ -646,7 +645,6 @@ function MainView({ onLock }: { onLock: () => void }) {
             const allDone = (!hasZec || zecConfirmed) && usdcConfirmed.size >= usdcTotal;
             return allDone ? (
               <AllPaidBanner onComplete={async () => {
-                setConfirmLoading(true);
                 try {
                   const totalZec = payResult.zec?.totalZec ?? 0;
                   const count = (payResult.zec?.payments.length ?? 0) + usdcTotal;
@@ -658,8 +656,6 @@ function MainView({ onLock }: { onLock: () => void }) {
                   setTimeout(() => setLastPayment(null), 8000);
                 } catch (e: unknown) {
                   setError(e instanceof Error ? e.message : "Failed to confirm payment");
-                } finally {
-                  setConfirmLoading(false);
                 }
               }} />
             ) : (

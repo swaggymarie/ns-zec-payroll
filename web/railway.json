@@ -5,7 +5,7 @@
     "buildCommand": "cd .. && npm install && npm run build --workspace=web"
   },
   "deploy": {
-    "startCommand": "npx serve dist",
+    "startCommand": "npx serve dist -l ${PORT:-3000}",
     "healthcheckPath": "/"
   }
 }

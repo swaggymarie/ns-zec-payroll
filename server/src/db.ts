@@ -205,8 +205,19 @@ export async function saveConfig(
         });
       }
     } else {
-      await prisma.recipient.create({
-        data: {
+      await prisma.recipient.upsert({
+        where: { vaultId_nameLookup: { vaultId, nameLookup } },
+        update: {
+          encryptedData,
+          amount: r.amount,
+          currency: r.currency,
+          schedule: r.schedule,
+          testTxSent: r.testTxSent,
+          testTxConfirmed: r.testTxConfirmed,
+          lastPaidDate: r.lastPaidDate ? new Date(r.lastPaidDate) : null,
+          paid: r.paid,
+        },
+        create: {
           vaultId,
           encryptedData,
           nameLookup,
@@ -217,15 +228,6 @@ export async function saveConfig(
           testTxConfirmed: r.testTxConfirmed,
           lastPaidDate: r.lastPaidDate ? new Date(r.lastPaidDate) : null,
           paid: r.paid,
-          history: {
-            create: r.history.map((h) => ({
-              date: new Date(h.date),
-              amountZec: h.amountZec,
-              amountOriginal: h.amountOriginal,
-              currency: h.currency,
-              zecPriceUsd: h.zecPriceUsd,
-            })),
-          },
         },
       });
     }

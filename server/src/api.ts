@@ -258,6 +258,24 @@ const server = http.createServer(async (req, res) => {
       return;
     }
 
+    // ── Sample CSV ──
+    if (url === "/api/sample-csv" && req.method === "GET") {
+      const config = requireAuth(res);
+      if (!config) return;
+      const { readFileSync } = await import("fs");
+      const { resolve } = await import("path");
+      const { fileURLToPath } = await import("url");
+      const __dirname = resolve(fileURLToPath(import.meta.url), "..");
+      const samplePath = resolve(__dirname, "..", "sample.csv");
+      try {
+        const csv = readFileSync(samplePath, "utf8");
+        json(res, { csv });
+      } catch {
+        error(res, "sample.csv not found", 404);
+      }
+      return;
+    }
+
     // ── CSV import ──
     if (url === "/api/import" && req.method === "POST") {
       const config = requireAuth(res);

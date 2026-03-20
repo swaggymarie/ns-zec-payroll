@@ -163,6 +163,18 @@ function MainView({ onLock }: { onLock: () => void }) {
     }
   }
 
+  async function handleLoadSample() {
+    try {
+      const { csv } = await api.sampleCsv();
+      await api.importCsv(csv);
+      setShowImport(false);
+      setError("");
+      refresh();
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Failed to load sample data");
+    }
+  }
+
   // ── Pay actions ──
   async function handlePay() {
     setError("");
@@ -510,6 +522,12 @@ function MainView({ onLock }: { onLock: () => void }) {
         </div>
         <input ref={fileRef} type="file" accept=".csv" onChange={handleCsvUpload}
           className="block w-full text-sm text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-amber-500/20 file:text-amber-400 hover:file:bg-amber-500/30 file:cursor-pointer mb-4" />
+        <div className="flex items-center gap-3 mb-4 pt-3 border-t border-[#2d2d52]">
+          <span className="text-gray-500 text-xs">or</span>
+          <button onClick={handleLoadSample} className="text-sm text-amber-400 hover:text-amber-300 transition-colors">
+            Load sample data
+          </button>
+        </div>
         <button onClick={() => setShowImport(false)}
           className="w-full py-2.5 bg-[#2d2d52] text-gray-300 rounded-lg font-medium hover:bg-[#3d3d62] transition-colors text-sm">
           Cancel

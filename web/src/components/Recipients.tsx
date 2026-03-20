@@ -66,6 +66,19 @@ export function Recipients() {
     }
   }
 
+  async function handleLoadSample() {
+    try {
+      const { csv } = await api.sampleCsv();
+      const result = await api.importCsv(csv);
+      setShowImport(false);
+      setError("");
+      refresh();
+      alert(`Imported ${result.imported} sample recipients (${result.total} total)`);
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Failed to load sample data");
+    }
+  }
+
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
@@ -133,6 +146,15 @@ export function Recipients() {
             onChange={handleCsvUpload}
             className="block w-full text-sm text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-amber-500/20 file:text-amber-400 hover:file:bg-amber-500/30 file:cursor-pointer"
           />
+          <div className="flex items-center gap-3 mt-3 pt-3 border-t border-[#2d2d52]">
+            <span className="text-gray-500 text-xs">or</span>
+            <button
+              onClick={handleLoadSample}
+              className="text-sm text-amber-400 hover:text-amber-300 transition-colors"
+            >
+              Load sample data
+            </button>
+          </div>
         </div>
       )}
 

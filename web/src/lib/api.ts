@@ -31,6 +31,7 @@ export const api = {
   updateRecipient: (name: string, updates: Partial<Recipient>) => request<{ ok: boolean }>(`/recipients/${encodeURIComponent(name)}`, { method: "PUT", body: JSON.stringify(updates) }),
 
   importCsv: (csv: string) => request<{ ok: boolean; imported: number; total: number }>("/import", { method: "POST", body: JSON.stringify({ csv }) }),
+  sampleCsv: () => request<{ csv: string }>("/sample-csv"),
 
   testTx: (name: string) => request<{ uri: string; name: string }>("/test-tx", { method: "POST", body: JSON.stringify({ name }) }),
   confirmTest: (name: string) => request<{ ok: boolean }>("/confirm-test", { method: "POST", body: JSON.stringify({ name }) }),

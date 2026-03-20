@@ -10,7 +10,7 @@ import { EditableRecipientInfo } from "./components/EditableRecipientInfo";
 import { TelegramSettings } from "./components/TelegramSettings";
 import { QRCodeSVG } from "qrcode.react";
 import {
-  Lock, CheckCircle, Pencil, Settings, Search,
+  Lock, CheckCircle, Pencil, Settings, Search, Copy, Check,
   Plus, Upload, Trash2, Send, X, RefreshCw, Banknote,
 } from "lucide-react";
 
@@ -501,34 +501,45 @@ function MainView({ onLock }: { onLock: () => void }) {
             <PaymentCard title="ZEC" uri={payResult.zec.uri} payments={payResult.zec.payments}
               totalZec={payResult.zec.totalZec} zecPrice={price} copied={copied} onCopy={copyUri} />
           )}
-          {payResult.usdc && (
-            <div className="bg-[#1a1a2e] border border-blue-500/30 rounded-xl p-5">
-              <div className="flex items-center gap-2 mb-3">
-                <h3 className="text-white font-semibold text-sm">USDC via Zodl CrossPay</h3>
-                <span className="text-xs px-1.5 py-0.5 rounded bg-blue-500/15 text-blue-400">
-                  {payResult.usdc.crossPay.length} recipient{payResult.usdc.crossPay.length !== 1 ? "s" : ""}
-                </span>
+          {payResult.usdc?.crossPay && payResult.usdc.crossPay.length > 0 && (
+            <div className="bg-[#0f0f1e] rounded-xl overflow-hidden">
+              <div className="px-5 py-3 border-b border-[#2d2d52] flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <h3 className="text-white font-medium text-sm">USDC via Zodl CrossPay</h3>
+                  <span className="text-xs px-1.5 py-0.5 rounded bg-blue-500/15 text-blue-400">
+                    {payResult.usdc.crossPay.length} recipient{payResult.usdc.crossPay.length !== 1 ? "s" : ""}
+                  </span>
+                </div>
+                <span className="text-white font-bold font-mono text-sm">${payResult.usdc.totalUsdc.toFixed(2)} USDC</span>
               </div>
-              <p className="text-blue-400 text-xs mb-3 bg-blue-500/10 border border-blue-500/20 rounded-lg px-3 py-2">
-                Open Zodl → Pay → select USDC → enter destination address and amount for each.
-              </p>
-              <div className="space-y-2">
+              <div className="divide-y divide-[#2d2d52]/30">
                 {payResult.usdc.crossPay.map((cp) => (
-                  <div key={cp.name} className="bg-[#0f0f1e] rounded-lg p-3 flex items-center justify-between gap-3">
-                    <div className="min-w-0">
-                      <div className="text-white text-sm font-medium">{cp.name}</div>
-                      <div className="flex items-center gap-1.5 mt-0.5">
-                        <span className="text-[10px] px-1 py-0.5 rounded bg-blue-500/15 text-blue-400 capitalize">{cp.usdcChain}</span>
-                        <code className="text-[10px] text-gray-500 truncate">{cp.usdcAddress}</code>
+                  <div key={cp.name} className="flex flex-col sm:flex-row gap-4 p-5">
+                    <div className="flex flex-col items-center gap-2 shrink-0">
+                      <div className="bg-white rounded-xl p-3">
+                        <QRCodeSVG value={cp.usdcAddress} size={120} />
+                      </div>
+                      <button onClick={() => copyUri(cp.usdcAddress, cp.name)}
+                        className="flex items-center gap-1.5 px-2.5 py-1 text-[10px] rounded-lg border border-[#2d2d52] text-gray-400 hover:text-blue-400 hover:border-blue-500/30 transition-colors">
+                        {copied === cp.name ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
+                        {copied === cp.name ? "Copied!" : "Copy address"}
+                      </button>
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-white font-medium text-sm">{cp.name}</span>
+                        <span className="text-white font-mono font-bold text-sm">${cp.amount.toFixed(2)}</span>
+                      </div>
+                      <div className="space-y-1.5">
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-[10px] px-1.5 py-0.5 rounded bg-blue-500/15 text-blue-400 capitalize">{cp.usdcChain}</span>
+                        </div>
+                        <code className="text-xs text-gray-400 break-all block">{cp.usdcAddress}</code>
+                        {cp.memo && <p className="text-xs text-gray-500">{cp.memo}</p>}
                       </div>
                     </div>
-                    <span className="text-white font-mono font-bold text-sm shrink-0">${cp.amount.toFixed(2)}</span>
                   </div>
                 ))}
-              </div>
-              <div className="flex items-center justify-between mt-3 pt-2 border-t border-[#2d2d52]">
-                <span className="text-gray-400 text-xs">Total USDC</span>
-                <span className="text-white font-bold font-mono text-sm">${payResult.usdc.totalUsdc.toFixed(2)}</span>
               </div>
             </div>
           )}
@@ -542,7 +553,7 @@ function MainView({ onLock }: { onLock: () => void }) {
               setConfirmLoading(true);
               try {
                 const totalZec = payResult.zec?.totalZec ?? 0;
-                const count = (payResult.zec?.payments.length ?? 0) + (payResult.usdc?.crossPay.length ?? 0);
+                const count = (payResult.zec?.payments.length ?? 0) + (payResult.usdc?.crossPay?.length ?? 0);
                 await api.confirmPay();
                 setPayResult(null);
                 setPreview(null);

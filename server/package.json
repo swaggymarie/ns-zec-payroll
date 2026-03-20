@@ -8,7 +8,7 @@
   },
   "scripts": {
     "build": "npx prisma generate && tsc",
-    "start": "node dist/cli.js",
+    "start": "node dist/api.js",
     "test": "tsc && node dist/test-e2e.js",
     "api": "npx prisma generate && tsc && node --env-file=.env dist/api.js",
     "db:migrate": "npx prisma migrate dev",

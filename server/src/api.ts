@@ -6,7 +6,8 @@
 import http from "http";
 import { randomBytes } from "crypto";
 import cron from "node-cron";
-import { initVault, unlockVault, hasVaults, loadConfig, saveConfig } from "./db.js";
+import { initVault, unlockVault, hasVaults, loadConfig, saveConfig, updateRecipientFlags } from "./db.js";
+import { clearKeyCache } from "./crypto.js";
 import { importCsv } from "./csv.js";
 import { fetchZecPrice, usdToZec } from "./price.js";
 import { buildZip321Uri, buildTestTxUri } from "./zip321.js";
@@ -136,7 +137,8 @@ const server = http.createServer(async (req, res) => {
         sessionPassphrase = passphrase;
         sessionVaultId = vaultId;
         json(res, { ok: true });
-      } catch {
+      } catch (e) {
+        console.error("Unlock error:", e);
         error(res, "Invalid passphrase or database error", 401);
       }
       return;
@@ -160,6 +162,7 @@ const server = http.createServer(async (req, res) => {
       sessionPassphrase = null;
       sessionVaultId = null;
       cachedConfig = null;
+      clearKeyCache();
       json(res, { ok: true });
       return;
     }
@@ -247,7 +250,7 @@ const server = http.createServer(async (req, res) => {
       );
       if (idx === -1) return error(res, "Recipient not found", 404);
       const updates = JSON.parse(await readBody(req));
-      const allowed = ["amount", "currency", "schedule", "memo", "wallet", "avatar"];
+      const allowed = ["amount", "currency", "schedule", "memo", "wallet", "avatar", "group"];
       for (const key of allowed) {
         if (updates[key] !== undefined) {
           (config.recipients[idx] as unknown as Record<string, unknown>)[key] = updates[key];
@@ -317,7 +320,7 @@ const server = http.createServer(async (req, res) => {
       if (!r) return error(res, "Recipient not found", 404);
       const uri = buildTestTxUri(r.wallet, r.name);
       r.testTxSent = true;
-      await persist();
+      await updateRecipientFlags(sessionVaultId!, r.name, { testTxSent: true });
       json(res, { uri, name: r.name });
       return;
     }
@@ -331,7 +334,7 @@ const server = http.createServer(async (req, res) => {
       );
       if (!r) return error(res, "Recipient not found", 404);
       r.testTxConfirmed = true;
-      await persist();
+      await updateRecipientFlags(sessionVaultId!, r.name, { testTxConfirmed: true });
       json(res, { ok: true });
       return;
     }

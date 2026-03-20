@@ -59,6 +59,7 @@ function MainView({ onLock }: { onLock: () => void }) {
   const [testQr, setTestQr] = useState<{ name: string; uri: string } | null>(null);
   const [copied, setCopied] = useState<string | null>(null);
   const [filter, setFilter] = useState<"all" | "recurring" | "one-time">("all");
+  const [groupFilter, setGroupFilter] = useState<string>("all");
   const [detail, setDetail] = useState<RecipientDetail | null>(null);
   const [editingRecipient, setEditingRecipient] = useState<Recipient | null>(null);
   const [showSettings, setShowSettings] = useState(false);
@@ -198,10 +199,13 @@ function MainView({ onLock }: { onLock: () => void }) {
   // ── Schedule lookup by name ──
   const scheduleMap = new Map(schedule?.recipients.map((r) => [r.name, r]) ?? []);
 
+  // ── Groups ──
+  const groups = [...new Set(recipients.map((r) => r.group).filter(Boolean))] as string[];
+
   // ── Filtered recipients ──
-  const filtered = filter === "all" ? recipients
-    : filter === "recurring" ? recipients.filter((r) => r.schedule !== "one-time")
-      : recipients.filter((r) => r.schedule === "one-time");
+  const filtered = recipients
+    .filter((r) => filter === "all" ? true : filter === "recurring" ? r.schedule !== "one-time" : r.schedule === "one-time")
+    .filter((r) => groupFilter === "all" ? true : r.group === groupFilter);
 
   // ── Render ──
   return (
@@ -344,6 +348,13 @@ function MainView({ onLock }: { onLock: () => void }) {
                   );
                 })}
               </div>
+              {groups.length > 0 && (
+                <select value={groupFilter} onChange={(e) => setGroupFilter(e.target.value)}
+                  className="px-2.5 py-1 bg-[#0f0f1e] border border-[#2d2d52] rounded-lg text-xs text-gray-400 focus:outline-none focus:border-amber-500/50">
+                  <option value="all">All groups</option>
+                  {groups.map((g) => <option key={g} value={g}>{g}</option>)}
+                </select>
+              )}
             </div>
             <div className="flex gap-2">
               <button onClick={() => { setShowImport(true); setShowAdd(false); }}
@@ -375,6 +386,7 @@ function MainView({ onLock }: { onLock: () => void }) {
                   <th className="text-left text-[10px] text-gray-500 uppercase tracking-wider font-medium px-6 py-2.5">Name</th>
                   <th className="text-left text-[10px] text-gray-500 uppercase tracking-wider font-medium px-4 py-2.5">Amount</th>
                   <th className="text-left text-[10px] text-gray-500 uppercase tracking-wider font-medium px-4 py-2.5">Schedule</th>
+                  <th className="text-left text-[10px] text-gray-500 uppercase tracking-wider font-medium px-4 py-2.5">Group</th>
                   <th className="text-left text-[10px] text-gray-500 uppercase tracking-wider font-medium px-4 py-2.5">Last Paid</th>
                   <th className="text-left text-[10px] text-gray-500 uppercase tracking-wider font-medium px-4 py-2.5">Status</th>
                   <th className="text-right text-[10px] text-gray-500 uppercase tracking-wider font-medium px-6 py-2.5"></th>
@@ -408,6 +420,13 @@ function MainView({ onLock }: { onLock: () => void }) {
                               "bg-amber-500/15 text-amber-400"
                           }`}>{r.schedule}</span>
                         {r.paid && <span className="ml-1.5 text-[10px] text-gray-500">(paid)</span>}
+                      </td>
+                      <td className="px-4 py-3.5">
+                        {r.group ? (
+                          <span className="text-[10px] px-1.5 py-0.5 rounded font-medium bg-indigo-500/15 text-indigo-400">{r.group}</span>
+                        ) : (
+                          <span className="text-gray-600 text-xs">—</span>
+                        )}
                       </td>
                       <td className="px-4 py-3.5 text-gray-500 text-xs">
                         {s?.lastPaid || "—"}

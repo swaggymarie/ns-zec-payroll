@@ -31,6 +31,7 @@ model Recipient {
   amount           Float
   currency         String
   schedule         String
+  groupName        String?  @map("group_name")
   testTxSent       Boolean  @default(false) @map("test_tx_sent")
   testTxConfirmed  Boolean  @default(false) @map("test_tx_confirmed")
   lastPaidDate     DateTime? @map("last_paid_date")

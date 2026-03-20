@@ -14,6 +14,7 @@ export interface Recipient {
   amount: number;
   currency: "USD" | "ZEC" | "USDC";
   schedule: PaySchedule;
+  group?: string; // e.g. "Engineering", "Design", "Marketing"
   memo?: string;
   avatar?: string; // URL to profile picture
   testTxSent: boolean;

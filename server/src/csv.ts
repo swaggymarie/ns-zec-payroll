@@ -17,6 +17,8 @@ export function importCsv(filePath: string): Recipient[] {
     const currency = (row["currency"] || row["Currency"] || "ZEC").toUpperCase();
     const schedule = (row["schedule"] || row["Schedule"] || "monthly").toLowerCase();
     const memo = row["memo"] || row["Memo"] || "";
+    const avatar = row["avatar"] || row["Avatar"] || "";
+    const group = row["group"] || row["Group"] || "";
 
     if (!name || !wallet || !amountStr) {
       throw new Error(`Row ${i + 1}: missing required field (name, wallet, or amount)`);
@@ -43,6 +45,8 @@ export function importCsv(filePath: string): Recipient[] {
       currency: currency as "USD" | "ZEC" | "USDC",
       schedule: schedule as PaySchedule,
       memo,
+      avatar: avatar || undefined,
+      group: group || undefined,
       testTxSent: false,
       testTxConfirmed: false,
       lastPaidDate: null,

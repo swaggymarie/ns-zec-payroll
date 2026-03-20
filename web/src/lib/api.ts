@@ -72,6 +72,7 @@ export interface Recipient {
   amount: number;
   currency: "USD" | "ZEC" | "USDC";
   schedule: PaySchedule;
+  group?: string;
   memo?: string;
   avatar?: string;
   testTxSent: boolean;

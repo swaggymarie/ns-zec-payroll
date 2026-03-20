@@ -12,6 +12,7 @@ export function EditRecipientForm({ recipient, onDone, onCancel }: {
   const [currency, setCurrency] = useState(recipient.currency);
   const [schedule, setSchedule] = useState(recipient.schedule);
   const [memo, setMemo] = useState(recipient.memo || "");
+  const [group, setGroup] = useState(recipient.group || "");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
 
@@ -24,6 +25,7 @@ export function EditRecipientForm({ recipient, onDone, onCancel }: {
         currency,
         schedule,
         memo,
+        group: group || undefined,
       });
       onDone();
     } catch (e: unknown) {
@@ -60,6 +62,12 @@ export function EditRecipientForm({ recipient, onDone, onCancel }: {
           <input value={memo} onChange={(e) => setMemo(e.target.value)}
             className="w-full px-3 py-2 bg-[#0f0f1e] border border-[#2d2d52] rounded-lg text-white text-sm placeholder-gray-500 focus:outline-none focus:border-amber-500/50"
             placeholder="Optional" />
+        </div>
+        <div>
+          <label className="text-xs text-gray-500 mb-1 block">Group</label>
+          <input value={group} onChange={(e) => setGroup(e.target.value)}
+            className="w-full px-3 py-2 bg-[#0f0f1e] border border-[#2d2d52] rounded-lg text-white text-sm placeholder-gray-500 focus:outline-none focus:border-amber-500/50"
+            placeholder="e.g. Engineering" />
         </div>
         {error && <div className="text-red-400 text-sm">{error}</div>}
         <div className="flex gap-2 justify-end pt-1">

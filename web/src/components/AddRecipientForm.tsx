@@ -4,7 +4,7 @@ import { api } from "../lib/api";
 import { AmountInput } from "./AmountInput";
 
 export function AddRecipientForm({ onDone, onCancel }: { onDone: () => void; onCancel: () => void }) {
-  const [form, setForm] = useState({ name: "", wallet: "", amount: "", currency: "ZEC", schedule: "monthly", memo: "", avatar: "" });
+  const [form, setForm] = useState({ name: "", wallet: "", amount: "", currency: "ZEC", schedule: "monthly", memo: "", avatar: "", group: "" });
   const [error, setError] = useState("");
 
   async function handleSubmit(e: React.FormEvent) {
@@ -19,6 +19,7 @@ export function AddRecipientForm({ onDone, onCancel }: { onDone: () => void; onC
         schedule: form.schedule as "weekly" | "biweekly" | "monthly" | "one-time",
         memo: form.memo,
         avatar: form.avatar || undefined,
+        group: form.group || undefined,
       });
       onDone();
     } catch (err: unknown) {
@@ -89,6 +90,12 @@ export function AddRecipientForm({ onDone, onCancel }: { onDone: () => void; onC
             <input placeholder="Payment note" value={form.memo} onChange={(e) => setForm({ ...form, memo: e.target.value })}
               className="w-full px-4 py-2.5 bg-[#0f0f1e] border border-[#2d2d52] rounded-xl text-white text-sm placeholder-gray-600 focus:outline-none focus:border-amber-500/50 transition-colors" />
           </div>
+        </div>
+
+        <div>
+          <label className="text-xs text-gray-500 mb-1.5 block">Group <span className="text-gray-600">(optional)</span></label>
+          <input placeholder="e.g. Engineering" value={form.group} onChange={(e) => setForm({ ...form, group: e.target.value })}
+            className="w-full px-4 py-2.5 bg-[#0f0f1e] border border-[#2d2d52] rounded-xl text-white text-sm placeholder-gray-600 focus:outline-none focus:border-amber-500/50 transition-colors" />
         </div>
 
         {error && (

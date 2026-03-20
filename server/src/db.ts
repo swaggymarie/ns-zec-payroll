@@ -14,6 +14,24 @@ const adapter = new PrismaPg(pool);
 const prisma = new PrismaClient({ adapter });
 export { prisma };
 
+// ── Lightweight single-recipient updates (no re-encryption) ──
+
+export async function updateRecipientFlags(
+  vaultId: string,
+  name: string,
+  flags: { testTxSent?: boolean; testTxConfirmed?: boolean; lastPaidDate?: string | null; paid?: boolean },
+): Promise<void> {
+  const data: Record<string, unknown> = {};
+  if (flags.testTxSent !== undefined) data.testTxSent = flags.testTxSent;
+  if (flags.testTxConfirmed !== undefined) data.testTxConfirmed = flags.testTxConfirmed;
+  if (flags.lastPaidDate !== undefined) data.lastPaidDate = flags.lastPaidDate ? new Date(flags.lastPaidDate) : null;
+  if (flags.paid !== undefined) data.paid = flags.paid;
+  await prisma.recipient.update({
+    where: { vaultId_nameLookup: { vaultId, nameLookup: name.toLowerCase() } },
+    data,
+  });
+}
+
 // ── Probe: known plaintext used for passphrase verification ──
 
 const PROBE_PLAINTEXT = "zcash-payroll-ok";
@@ -93,6 +111,7 @@ export async function loadConfig(
       amount: r.amount,
       currency: r.currency as Recipient["currency"],
       schedule: r.schedule as Recipient["schedule"],
+      group: r.groupName ?? undefined,
       testTxSent: r.testTxSent,
       testTxConfirmed: r.testTxConfirmed,
       lastPaidDate: r.lastPaidDate?.toISOString() ?? null,
@@ -183,6 +202,7 @@ export async function saveConfig(
           amount: r.amount,
           currency: r.currency,
           schedule: r.schedule,
+          groupName: r.group ?? null,
           testTxSent: r.testTxSent,
           testTxConfirmed: r.testTxConfirmed,
           lastPaidDate: r.lastPaidDate ? new Date(r.lastPaidDate) : null,
@@ -212,6 +232,7 @@ export async function saveConfig(
           amount: r.amount,
           currency: r.currency,
           schedule: r.schedule,
+          groupName: r.group ?? null,
           testTxSent: r.testTxSent,
           testTxConfirmed: r.testTxConfirmed,
           lastPaidDate: r.lastPaidDate ? new Date(r.lastPaidDate) : null,
@@ -224,6 +245,7 @@ export async function saveConfig(
           amount: r.amount,
           currency: r.currency,
           schedule: r.schedule,
+          groupName: r.group ?? null,
           testTxSent: r.testTxSent,
           testTxConfirmed: r.testTxConfirmed,
           lastPaidDate: r.lastPaidDate ? new Date(r.lastPaidDate) : null,

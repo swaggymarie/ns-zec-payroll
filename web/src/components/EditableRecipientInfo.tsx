@@ -11,6 +11,7 @@ export function EditableRecipientInfo({ detail, onSave }: {
   const [currency, setCurrency] = useState(detail.currency);
   const [schedule, setSchedule] = useState(detail.schedule);
   const [memo, setMemo] = useState(detail.memo || "");
+  const [group, setGroup] = useState(detail.group || "");
   const [saving, setSaving] = useState(false);
 
   async function handleSave() {
@@ -21,6 +22,7 @@ export function EditableRecipientInfo({ detail, onSave }: {
         currency: currency as "USD" | "ZEC" | "USDC",
         schedule,
         memo,
+        group: group || undefined,
       });
       setEditing(false);
     } finally {
@@ -47,6 +49,12 @@ export function EditableRecipientInfo({ detail, onSave }: {
           <span className="text-gray-400">Wallet</span>
           <code className="text-xs text-gray-300">{detail.wallet.slice(0, 16)}...{detail.wallet.slice(-8)}</code>
         </div>
+        {detail.group && (
+          <div className="flex justify-between">
+            <span className="text-gray-400">Group</span>
+            <span className="text-[10px] px-1.5 py-0.5 rounded font-medium bg-indigo-500/15 text-indigo-400">{detail.group}</span>
+          </div>
+        )}
         {detail.memo && (
           <div className="flex justify-between">
             <span className="text-gray-400">Memo</span>
@@ -78,6 +86,12 @@ export function EditableRecipientInfo({ detail, onSave }: {
           <option value="monthly">Monthly</option>
           <option value="one-time">One-time</option>
         </select>
+      </div>
+      <div>
+        <label className="text-xs text-gray-500 mb-1 block">Group</label>
+        <input value={group} onChange={(e) => setGroup(e.target.value)}
+          className="w-full px-3 py-1.5 bg-[#0f0f1e] border border-[#2d2d52] rounded-lg text-white text-sm placeholder-gray-500 focus:outline-none focus:border-amber-500/50"
+          placeholder="e.g. Engineering" />
       </div>
       <div>
         <label className="text-xs text-gray-500 mb-1 block">Memo</label>

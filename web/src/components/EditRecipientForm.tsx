@@ -62,7 +62,7 @@ export function EditRecipientForm({ recipient, onDone, onCancel }: {
             </div>
             <div>
               <label className="text-xs text-gray-500 mb-1 block">Chain</label>
-              <ChainSelect value={usdcChain} onChange={setUsdcChain} />
+              <ChainSelect value={usdcChain} onChange={(v) => setUsdcChain(v as typeof usdcChain)} />
             </div>
           </div>
         )}

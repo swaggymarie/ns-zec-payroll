@@ -5,9 +5,8 @@
  */
 import http from "http";
 import { randomBytes } from "crypto";
-import { readFileSync } from "fs";
 import cron from "node-cron";
-import { load, save } from "./store.js";
+import { initVault, unlockVault, hasVaults, loadConfig, saveConfig } from "./db.js";
 import { importCsv } from "./csv.js";
 import { fetchZecPrice, usdToZec } from "./price.js";
 import { buildZip321Uri, buildTestTxUri } from "./zip321.js";
@@ -19,6 +18,7 @@ const PORT = 3141;
 
 // In-memory session: passphrase is held only in memory while server runs
 let sessionPassphrase: string | null = null;
+let sessionVaultId: string | null = null;
 let cachedConfig: PayrollConfig | null = null;
 
 function json(res: http.ServerResponse, data: unknown, status = 200) {
@@ -51,9 +51,9 @@ function requireAuth(res: http.ServerResponse): PayrollConfig | null {
   return cachedConfig;
 }
 
-function persist() {
-  if (sessionPassphrase && cachedConfig) {
-    save(cachedConfig, sessionPassphrase);
+async function persist() {
+  if (sessionPassphrase && sessionVaultId && cachedConfig) {
+    await saveConfig(sessionVaultId, cachedConfig, sessionPassphrase);
   }
 }
 
@@ -130,11 +130,14 @@ const server = http.createServer(async (req, res) => {
       const { passphrase } = JSON.parse(await readBody(req));
       if (!passphrase) return error(res, "Passphrase required");
       try {
-        cachedConfig = load(passphrase);
+        const vaultId = await unlockVault(passphrase);
+        if (!vaultId) return error(res, "Invalid passphrase", 401);
+        cachedConfig = await loadConfig(vaultId, passphrase);
         sessionPassphrase = passphrase;
+        sessionVaultId = vaultId;
         json(res, { ok: true });
       } catch {
-        error(res, "Invalid passphrase or no store found", 401);
+        error(res, "Invalid passphrase or database error", 401);
       }
       return;
     }
@@ -142,18 +145,20 @@ const server = http.createServer(async (req, res) => {
     if (url === "/api/init" && req.method === "POST") {
       const { passphrase } = JSON.parse(await readBody(req));
       if (!passphrase) return error(res, "Passphrase required");
+      const vaultId = await initVault(passphrase);
       cachedConfig = {
         recipients: [],
         zecPriceUsd: null,
       };
       sessionPassphrase = passphrase;
-      persist();
+      sessionVaultId = vaultId;
       json(res, { ok: true });
       return;
     }
 
     if (url === "/api/lock" && req.method === "POST") {
       sessionPassphrase = null;
+      sessionVaultId = null;
       cachedConfig = null;
       json(res, { ok: true });
       return;
@@ -193,7 +198,7 @@ const server = http.createServer(async (req, res) => {
       } else {
         config.recipients.push(recipient);
       }
-      persist();
+      await persist();
       json(res, { ok: true, total: config.recipients.length });
       return;
     }
@@ -228,7 +233,7 @@ const server = http.createServer(async (req, res) => {
       );
       if (idx === -1) return error(res, "Recipient not found", 404);
       config.recipients.splice(idx, 1);
-      persist();
+      await persist();
       json(res, { ok: true });
       return;
     }
@@ -248,7 +253,7 @@ const server = http.createServer(async (req, res) => {
           (config.recipients[idx] as unknown as Record<string, unknown>)[key] = updates[key];
         }
       }
-      persist();
+      await persist();
       json(res, { ok: true });
       return;
     }
@@ -275,7 +280,7 @@ const server = http.createServer(async (req, res) => {
             config.recipients.push(nr);
           }
         }
-        persist();
+        await persist();
         json(res, { ok: true, imported: imported.length, total: config.recipients.length });
       } finally {
         unlinkSync(tmp);
@@ -294,7 +299,7 @@ const server = http.createServer(async (req, res) => {
       if (!r) return error(res, "Recipient not found", 404);
       const uri = buildTestTxUri(r.wallet, r.name);
       r.testTxSent = true;
-      persist();
+      await persist();
       json(res, { uri, name: r.name });
       return;
     }
@@ -308,7 +313,7 @@ const server = http.createServer(async (req, res) => {
       );
       if (!r) return error(res, "Recipient not found", 404);
       r.testTxConfirmed = true;
-      persist();
+      await persist();
       json(res, { ok: true });
       return;
     }
@@ -320,7 +325,7 @@ const server = http.createServer(async (req, res) => {
       try {
         const price = await fetchZecPrice();
         config.zecPriceUsd = price;
-        persist();
+        await persist();
         json(res, { price });
       } catch {
         if (config.zecPriceUsd) {
@@ -338,7 +343,7 @@ const server = http.createServer(async (req, res) => {
       const { price } = JSON.parse(await readBody(req));
       if (typeof price !== "number" || price <= 0) return error(res, "Invalid price");
       config.zecPriceUsd = price;
-      persist();
+      await persist();
       json(res, { ok: true, price });
       return;
     }
@@ -422,7 +427,7 @@ const server = http.createServer(async (req, res) => {
         const payment = allPayments.find((p) => p.name === r.name);
         markPaid(r, payment?.amountZec ?? 0, config.zecPriceUsd);
       }
-      persist();
+      await persist();
 
       json(res, { ok: true });
       return;
@@ -474,7 +479,7 @@ const server = http.createServer(async (req, res) => {
         chatId: chatId ?? config.telegram?.chatId ?? "",
         enabled: enabled ?? config.telegram?.enabled ?? false,
       };
-      persist();
+      await persist();
       json(res, { ok: true });
       return;
     }

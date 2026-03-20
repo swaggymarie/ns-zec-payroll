@@ -7,24 +7,32 @@
     "zcash-payroll": "./dist/cli.js"
   },
   "scripts": {
-    "build": "tsc",
+    "build": "npx prisma generate && tsc",
     "start": "node dist/cli.js",
     "test": "tsc && node dist/test-e2e.js",
-    "api": "tsc && node --env-file=.env dist/api.js"
+    "api": "npx prisma generate && tsc && node --env-file=.env dist/api.js",
+    "db:migrate": "npx prisma migrate dev",
+    "db:push": "npx prisma db push"
   },
   "dependencies": {
+    "@prisma/adapter-pg": "^7.5.0",
+    "@prisma/client": "^7.5.0",
     "chalk": "^5.6.2",
     "commander": "^14.0.3",
     "csv-parse": "^6.2.0",
+    "dotenv": "^16.6.1",
     "inquirer": "^13.3.2",
     "node-cron": "^4.2.1",
+    "pg": "^8.20.0",
     "qrcode": "^1.5.4"
   },
   "devDependencies": {
     "@types/inquirer": "^9.0.9",
     "@types/node": "^25.5.0",
     "@types/node-cron": "^3.0.11",
+    "@types/pg": "^8.11.11",
     "@types/qrcode": "^1.5.6",
+    "prisma": "^7.5.0",
     "typescript": "^5.9.3"
   }
 }

@@ -1,0 +1,74 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+/// A payroll vault. The passphrase is never stored — only an encrypted probe
+/// that can be trial-decrypted to verify the passphrase.
+model Vault {
+  id         String @id @default(cuid())
+  /// encrypt("zcash-payroll-ok", passphrase) — used to verify passphrase
+  probe      String
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  recipients Recipient[]
+  settings   Settings?
+
+  @@map("vaults")
+}
+
+model Recipient {
+  id               String   @id @default(cuid())
+  vaultId          String   @map("vault_id")
+  /// Encrypted with passphrase (contains: name, wallet, memo, avatar)
+  encryptedData    String   @map("encrypted_data")
+  /// Encrypted name for lookups (scoped to vault)
+  nameLookup       String   @map("name_lookup")
+  amount           Float
+  currency         String
+  schedule         String
+  testTxSent       Boolean  @default(false) @map("test_tx_sent")
+  testTxConfirmed  Boolean  @default(false) @map("test_tx_confirmed")
+  lastPaidDate     DateTime? @map("last_paid_date")
+  paid             Boolean  @default(false)
+  createdAt        DateTime @default(now()) @map("created_at")
+  updatedAt        DateTime @updatedAt @map("updated_at")
+
+  vault            Vault @relation(fields: [vaultId], references: [id], onDelete: Cascade)
+  history          PaymentRecord[]
+
+  @@unique([vaultId, nameLookup])
+  @@map("recipients")
+}
+
+model PaymentRecord {
+  id              String   @id @default(cuid())
+  recipientId     String   @map("recipient_id")
+  date            DateTime
+  amountZec       Float    @map("amount_zec")
+  amountOriginal  Float    @map("amount_original")
+  currency        String
+  zecPriceUsd     Float?   @map("zec_price_usd")
+  createdAt       DateTime @default(now()) @map("created_at")
+
+  recipient       Recipient @relation(fields: [recipientId], references: [id], onDelete: Cascade)
+
+  @@map("payment_records")
+}
+
+/// Per-vault settings (one row per vault)
+model Settings {
+  id                String  @id @default(cuid())
+  vaultId           String  @unique @map("vault_id")
+  zecPriceUsd       Float?  @map("zec_price_usd")
+  /// Encrypted telegram config (chatId, enabled)
+  encryptedTelegram String? @map("encrypted_telegram")
+
+  vault             Vault @relation(fields: [vaultId], references: [id], onDelete: Cascade)
+
+  @@map("settings")
+}

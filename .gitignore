@@ -3,3 +3,4 @@ node_modules
 *.d.ts.map
 server/dist
 server/.env
+server/src/generated

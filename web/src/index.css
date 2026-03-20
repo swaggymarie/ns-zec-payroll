@@ -1,5 +1,10 @@
 @import "tailwindcss";
 
+button,
+[role="button"] {
+  cursor: pointer;
+}
+
 /* Hide number input spinners */
 input[type="number"]::-webkit-outer-spin-button,
 input[type="number"]::-webkit-inner-spin-button {

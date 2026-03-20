@@ -384,12 +384,12 @@ function MainView({ onLock }: { onLock: () => void }) {
                 {filtered.map((r) => {
                   const s = scheduleMap.get(r.name);
                   return (
-                    <tr key={r.name} className="border-b border-[#2d2d52]/30 last:border-0 hover:bg-white/[0.015] transition-colors">
+                    <tr key={r.name} onClick={() => openDetail(r.name)} className="border-b border-[#2d2d52]/30 last:border-0 hover:bg-white/[0.015] transition-colors cursor-pointer">
                       <td className="px-6 py-3.5">
                         <div className="flex items-center gap-3">
                           <Avatar src={r.avatar} name={r.name} size="md" />
                           <div className="flex flex-col gap-1">
-                            <button onClick={() => openDetail(r.name)} className="text-white font-medium text-sm hover:text-amber-400 transition-colors text-left block p-0">{r.name}</button>
+                            <span className="text-white font-medium text-sm">{r.name}</span>
                             <code className="text-[10px] text-gray-600 font-mono">{r.wallet.slice(0, 8)}…{r.wallet.slice(-4)}</code>
                           </div>
                         </div>
@@ -420,7 +420,7 @@ function MainView({ onLock }: { onLock: () => void }) {
                           return <span className="text-emerald-400/70 text-xs">{s.nextDue || "Upcoming"}</span>;
                         })()}
                       </td>
-                      <td className="px-6 py-3.5 text-right">
+                      <td className="px-6 py-3.5 text-right cursor-default" onClick={(e) => e.stopPropagation()}>
                         <div className="flex items-center justify-end gap-1">
                           {r.testTxConfirmed ? (
                             <span className="inline-flex items-center gap-1 text-emerald-400/70 text-[10px] font-medium mr-1"><CheckCircle className="w-3 h-3" /> Verified</span>

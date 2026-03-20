@@ -3,7 +3,7 @@ import { Command } from "commander";
 import inquirer from "inquirer";
 import chalk from "chalk";
 import { randomUUID } from "crypto";
-import { load, save } from "./store.js";
+import { unlockVault, initVault, loadConfig, saveConfig } from "./db.js";
 import { importCsv } from "./csv.js";
 import { fetchZecPrice, usdToZec } from "./price.js";
 import { buildZip321Uri, buildTestTxUri } from "./zip321.js";
@@ -27,6 +27,21 @@ async function askPassphrase(): Promise<string> {
   return passphrase;
 }
 
+async function unlock(): Promise<{ vaultId: string; passphrase: string; config: PayrollConfig }> {
+  const passphrase = await askPassphrase();
+  const vaultId = await unlockVault(passphrase);
+  if (!vaultId) {
+    console.log(chalk.red("Invalid passphrase or no matching vault found."));
+    process.exit(1);
+  }
+  const config = await loadConfig(vaultId, passphrase);
+  return { vaultId, passphrase, config };
+}
+
+async function persist(vaultId: string, config: PayrollConfig, passphrase: string) {
+  await saveConfig(vaultId, config, passphrase);
+}
+
 // ─── init ───────────────────────────────────────────────────────────────────
 
 program
@@ -41,12 +56,8 @@ program
       console.log(chalk.red("Passphrases do not match."));
       process.exit(1);
     }
-    const config: PayrollConfig = {
-      recipients: [],
-      zecPriceUsd: null,
-    };
-    save(config, passphrase);
-    console.log(chalk.green("Payroll store initialized."));
+    const vaultId = await initVault(passphrase);
+    console.log(chalk.green(`Payroll vault initialized (${vaultId}).`));
   });
 
 // ─── import ─────────────────────────────────────────────────────────────────
@@ -55,8 +66,7 @@ program
   .command("import <csvFile>")
   .description("Import recipients from CSV (columns: name, wallet, amount, currency, memo)")
   .action(async (csvFile: string) => {
-    const passphrase = await askPassphrase();
-    const config = load(passphrase);
+    const { vaultId, passphrase, config } = await unlock();
     const newRecipients = importCsv(csvFile);
 
     // Merge: update existing by name, add new
@@ -74,7 +84,7 @@ program
       }
     }
 
-    save(config, passphrase);
+    await persist(vaultId, config, passphrase);
     console.log(chalk.green(`\n${config.recipients.length} total recipients in payroll.`));
   });
 
@@ -84,8 +94,7 @@ program
   .command("list")
   .description("List all recipients")
   .action(async () => {
-    const passphrase = await askPassphrase();
-    const config = load(passphrase);
+    const { config } = await unlock();
 
     if (config.recipients.length === 0) {
       console.log(chalk.yellow("No recipients configured. Use `import` to add from CSV."));
@@ -127,8 +136,7 @@ program
   .command("test-tx [name]")
   .description("Generate test transaction URIs (0.0001 ZEC) for recipients")
   .action(async (name?: string) => {
-    const passphrase = await askPassphrase();
-    const config = load(passphrase);
+    const { vaultId, passphrase, config } = await unlock();
 
     const targets = name
       ? config.recipients.filter((r) => r.name.toLowerCase() === name.toLowerCase())
@@ -149,7 +157,7 @@ program
       r.testTxSent = true;
     }
 
-    save(config, passphrase);
+    await persist(vaultId, config, passphrase);
     console.log(
       chalk.green(
         `\nTest transactions generated for ${targets.length} recipient(s).`
@@ -168,15 +176,14 @@ program
   .command("confirm-test <name>")
   .description("Mark a test transaction as confirmed for a recipient")
   .action(async (name: string) => {
-    const passphrase = await askPassphrase();
-    const config = load(passphrase);
+    const { vaultId, passphrase, config } = await unlock();
     const r = config.recipients.find((r) => r.name.toLowerCase() === name.toLowerCase());
     if (!r) {
       console.log(chalk.red(`Recipient "${name}" not found.`));
       process.exit(1);
     }
     r.testTxConfirmed = true;
-    save(config, passphrase);
+    await persist(vaultId, config, passphrase);
     console.log(chalk.green(`Test transaction confirmed for ${r.name}.`));
   });
 
@@ -186,8 +193,7 @@ program
   .command("preview")
   .description("Preview the next payroll batch with current ZEC price")
   .action(async () => {
-    const passphrase = await askPassphrase();
-    const config = load(passphrase);
+    const { vaultId, passphrase, config } = await unlock();
 
     const due = getDueRecipients(config.recipients);
     if (due.length === 0) {
@@ -201,7 +207,7 @@ program
       console.log(chalk.gray("Fetching current ZEC price..."));
       zecPrice = await fetchZecPrice();
       config.zecPriceUsd = zecPrice;
-      save(config, passphrase);
+      await persist(vaultId, config, passphrase);
       console.log(chalk.green(`ZEC price: $${zecPrice.toFixed(2)}`));
     } catch {
       if (zecPrice) {
@@ -279,15 +285,14 @@ program
   .command("set-price <usd>")
   .description("Manually set the ZEC/USD price")
   .action(async (usd: string) => {
-    const passphrase = await askPassphrase();
-    const config = load(passphrase);
+    const { vaultId, passphrase, config } = await unlock();
     const price = parseFloat(usd);
     if (isNaN(price) || price <= 0) {
       console.log(chalk.red("Invalid price."));
       process.exit(1);
     }
     config.zecPriceUsd = price;
-    save(config, passphrase);
+    await persist(vaultId, config, passphrase);
     console.log(chalk.green(`ZEC price set to $${price.toFixed(2)}`));
   });
 
@@ -297,8 +302,7 @@ program
   .command("pay")
   .description("Generate ZIP-321 multi-payment URI for the payroll batch")
   .action(async () => {
-    const passphrase = await askPassphrase();
-    const config = load(passphrase);
+    const { vaultId, passphrase, config } = await unlock();
 
     const due = getDueRecipients(config.recipients);
     if (due.length === 0) {
@@ -386,7 +390,7 @@ program
       const p = allCliPayments.find((p) => p.name === r.name);
       markPaid(r, p?.amountZec ?? 0, zecPrice);
     }
-    save(config, passphrase);
+    await persist(vaultId, config, passphrase);
 
     console.log(chalk.green(`\nPayout recorded for ${due.length} recipient(s).`));
   });
@@ -397,8 +401,7 @@ program
   .command("status")
   .description("Show payroll schedule status")
   .action(async () => {
-    const passphrase = await askPassphrase();
-    const config = load(passphrase);
+    const { config } = await unlock();
 
     const due = getDueRecipients(config.recipients);
     console.log(chalk.bold("\n── Payroll Status ──\n"));
@@ -420,8 +423,7 @@ program
   .command("add")
   .description("Interactively add a single recipient")
   .action(async () => {
-    const passphrase = await askPassphrase();
-    const config = load(passphrase);
+    const { vaultId, passphrase, config } = await unlock();
 
     const answers = await inquirer.prompt([
       { type: "input", name: "name", message: "Recipient name:" },
@@ -456,7 +458,7 @@ program
       history: [],
     });
 
-    save(config, passphrase);
+    await persist(vaultId, config, passphrase);
     console.log(chalk.green(`Added ${answers.name} to payroll.`));
   });
 
@@ -466,8 +468,7 @@ program
   .command("remove <name>")
   .description("Remove a recipient by name")
   .action(async (name: string) => {
-    const passphrase = await askPassphrase();
-    const config = load(passphrase);
+    const { vaultId, passphrase, config } = await unlock();
 
     const idx = config.recipients.findIndex(
       (r) => r.name.toLowerCase() === name.toLowerCase()
@@ -478,7 +479,7 @@ program
     }
 
     const removed = config.recipients.splice(idx, 1)[0];
-    save(config, passphrase);
+    await persist(vaultId, config, passphrase);
     console.log(chalk.green(`Removed ${removed.name} from payroll.`));
   });
 

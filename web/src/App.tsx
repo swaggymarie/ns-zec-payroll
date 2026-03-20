@@ -10,7 +10,7 @@ import { EditableRecipientInfo } from "./components/EditableRecipientInfo";
 import { TelegramSettings } from "./components/TelegramSettings";
 import { QRCodeSVG } from "qrcode.react";
 import {
-  Lock, CheckCircle, Pencil, Settings,
+  Lock, CheckCircle, Pencil, Settings, Search,
   Plus, Upload, Trash2, Send, X, RefreshCw, Banknote,
 } from "lucide-react";
 
@@ -50,6 +50,7 @@ function MainView({ onLock }: { onLock: () => void }) {
   const [loading, setLoading] = useState(true);
   const [priceLoading, setPriceLoading] = useState(false);
   const [payLoading, setPayLoading] = useState(false);
+  const [confirmLoading, setConfirmLoading] = useState(false);
   const [error, setError] = useState("");
 
   const [showAdd, setShowAdd] = useState(false);
@@ -59,6 +60,7 @@ function MainView({ onLock }: { onLock: () => void }) {
   const [testQr, setTestQr] = useState<{ name: string; uri: string } | null>(null);
   const [copied, setCopied] = useState<string | null>(null);
   const [filter, setFilter] = useState<"all" | "recurring" | "one-time">("all");
+  const [search, setSearch] = useState("");
   const [groupFilter, setGroupFilter] = useState<string>("all");
   const [detail, setDetail] = useState<RecipientDetail | null>(null);
   const [editingRecipient, setEditingRecipient] = useState<Recipient | null>(null);
@@ -205,7 +207,8 @@ function MainView({ onLock }: { onLock: () => void }) {
   // ── Filtered recipients ──
   const filtered = recipients
     .filter((r) => filter === "all" ? true : filter === "recurring" ? r.schedule !== "one-time" : r.schedule === "one-time")
-    .filter((r) => groupFilter === "all" ? true : r.group === groupFilter);
+    .filter((r) => groupFilter === "all" ? true : r.group === groupFilter)
+    .filter((r) => !search || r.name.toLowerCase().includes(search.toLowerCase()));
 
   // ── Render ──
   return (
@@ -356,7 +359,17 @@ function MainView({ onLock }: { onLock: () => void }) {
                 </select>
               )}
             </div>
-            <div className="flex gap-2">
+            <div className="flex items-center gap-2">
+              <div className="relative">
+                <Search className="w-3.5 h-3.5 text-gray-500 absolute left-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                <input
+                  type="text"
+                  placeholder="Search..."
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  className="pl-8 pr-3 py-1.5 bg-[#0f0f1e] border border-[#2d2d52] rounded-lg text-xs text-white placeholder-gray-500 focus:outline-none focus:border-amber-500/50 transition-colors w-40"
+                />
+              </div>
               <button onClick={() => { setShowImport(true); setShowAdd(false); }}
                 className="flex items-center gap-1.5 px-3 py-1.5 text-gray-400 hover:text-gray-300 text-xs transition-colors">
                 <Upload className="w-3.5 h-3.5" /> Import
@@ -498,7 +511,8 @@ function MainView({ onLock }: { onLock: () => void }) {
               className="flex-1 py-2.5 bg-[#2d2d52] text-gray-300 rounded-lg font-medium hover:bg-[#3d3d62] transition-colors text-sm">
               Close
             </button>
-            <button onClick={async () => {
+            <button disabled={confirmLoading} onClick={async () => {
+              setConfirmLoading(true);
               try {
                 const zecTotal = payResult.zec?.totalZec ?? 0;
                 const usdcTotal = payResult.usdc?.totalZec ?? 0;
@@ -512,11 +526,17 @@ function MainView({ onLock }: { onLock: () => void }) {
                 setTimeout(() => setLastPayment(null), 8000);
               } catch (e: unknown) {
                 setError(e instanceof Error ? e.message : "Failed to confirm payment");
+              } finally {
+                setConfirmLoading(false);
               }
             }}
-              className="flex-1 py-2.5 bg-emerald-500 text-white rounded-lg font-medium hover:bg-emerald-400 transition-colors text-sm flex items-center justify-center gap-2">
-              <CheckCircle className="w-4 h-4" />
-              Payment Made
+              className="flex-1 py-2.5 bg-emerald-500 text-white rounded-lg font-medium hover:bg-emerald-400 disabled:opacity-50 transition-colors text-sm flex items-center justify-center gap-2">
+              {confirmLoading ? (
+                <RefreshCw className="w-4 h-4 animate-spin" />
+              ) : (
+                <CheckCircle className="w-4 h-4" />
+              )}
+              {confirmLoading ? "Confirming..." : "Payment Made"}
             </button>
           </div>
         </div>)}
